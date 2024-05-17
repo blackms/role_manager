@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Role Manager</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        let timers = {};
+
+        function formatRoleId(role) {
+            return role.replace(/ /g, '_');
+        }
+
+        function startTimer(role, duration) {
+            var display = $('#time_' + formatRoleId(role));
+            if (display.length === 0) return;
+
+            if (timers[role]) {
+                clearInterval(timers[role]);
+            }
+
+            var timer = duration;
+            timers[role] = setInterval(function () {
+                var minutes = parseInt(timer / 60, 10);
+                var seconds = parseInt(timer % 60, 10);
+
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+
+                display.text(minutes + ":" + seconds);
+
+                if (--timer < 0) {
+                    clearInterval(timers[role]);
+                    display.text("00:00");
+                }
+            }, 1000);
+        }
+
+        function releaseRole(role) {
+            $.get("/release_role/" + role, function() {
+                location.reload();
+            });
+        }
+
+        function assignRole(role) {
+            $.get("/assign_role/" + role, function() {
+                location.reload();
+            });
+        }
+
+        $(document).ready(function() {
+            {% for role, player in assignments.items() %}
+                {% if player %}
+                    var startTime = new Date("{{ start_times[role].isoformat() }}");
+                    var now = new Date();
+                    var elapsed = Math.floor((now - startTime) / 1000);
+                    var remaining = 300 - elapsed; // 5 minutes (300 seconds)
+                    startTimer("{{ role }}", remaining);
+                {% endif %}
+            {% endfor %}
+        });
+    </script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Role Manager</h1>
+        <form action="/request_role" method="POST" class="mb-4">
+            <div class="form-group">
+                <label for="player">Player Name:</label>
+                <input type="text" class="form-control" id="player" name="player" required>
+            </div>
+            <div class="form-group">
+                <label for="role">Requested Role:</label>
+                <select class="form-control" id="role" name="role" required>
+                    <option value="secretary of strategy">Secretary of Strategy</option>
+                    <option value="secretary of security">Secretary of Security</option>
+                    <option value="secretary of development">Secretary of Development</option>
+                    <option value="secretary of science">Secretary of Science</option>
+                    <option value="secretary of interior">Secretary of Interior</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="coordinates">Coordinates (optional):</label>
+                <input type="text" class="form-control" id="coordinates" name="coordinates">
+            </div>
+            <button type="submit" class="btn btn-primary">Request Role</button>
+        </form>
+        <h2 class="mb-3">Current Roles</h2>
+        <ul class="list-group mb-4">
+            {% for role, player in assignments.items() %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ role }}: {{ player if player else 'None' }}
+                    <div>
+                        {% if player %}
+                        <span id="time_{{ role | replace(' ', '_') }}" class="badge badge-primary badge-pill">05:00</span>
+                        <a href="#" onclick="releaseRole('{{ role }}')" class="btn btn-danger btn-sm ml-2">Release</a>
+                        {% else %}
+                        <a href="#" onclick="assignRole('{{ role }}')" class="btn btn-success btn-sm">Assign</a>
+                        {% endif %}
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+        <h2 class="mb-3">Waiting Queue</h2>
+        <ul class="list-group">
+            {% for role, queue in roles.items() %}
+                <li class="list-group-item">
+                    <strong>{{ role }}:</strong>
+                    <ul class="list-group mt-2">
+                        {% for player, coordinates in queue %}
+                            <li class="list-group-item">{{ player }}{% if coordinates %} ({{ coordinates }}){% endif %}</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>
