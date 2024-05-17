@@ -36,6 +36,7 @@
                 if (--timer < 0) {
                     clearInterval(timers[role]);
                     display.text("00:00");
+                    releaseRole(role);
                 }
             }, 1000);
         }
