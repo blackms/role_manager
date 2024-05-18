@@ -63,9 +63,9 @@
     $(document).ready(function() {
         {% for role, player_request in assignments.items() %}
             {% if player_request and start_times[role] %}
-                var startTime = new Date("{{ start_times[role] }}");
+                var serverStartTime = new Date("{{ start_times[role] }}");
                 var now = new Date();
-                var elapsed = Math.floor((now - startTime) / 1000);
+                var elapsed = Math.floor((now - serverStartTime) / 1000);
                 var remaining = 300 - elapsed; // 5 minutes (300 seconds)
                 startTimer("{{ role }}", remaining);
             {% endif %}

@@ -37,7 +37,7 @@ class RoleManager:
         if role in self.roles:
             player = self.normalize_player_name(player)
             alliance, player_name = self.parse_player_name(player)
-            new_request = RoleRequest(alliance=alliance, player=player_name, role=role, coordinates=coordinates)
+            new_request = RoleRequest(alliance=alliance, player=player_name, role=role, coordinates=coordinates, request_time=datetime.utcnow())
             db.session.add(new_request)
             db.session.commit()
             self.roles[role].append(new_request.id)
@@ -47,7 +47,7 @@ class RoleManager:
         if self.roles[role]:
             next_request_id = self.roles[role].popleft()
             next_request = RoleRequest.query.get(next_request_id)
-            next_request.assign_time = datetime.now()
+            next_request.assign_time = datetime.utcnow()
             db.session.commit()
             self.current_assignments[role] = next_request
             self.assignment_start_times[role] = next_request.assign_time

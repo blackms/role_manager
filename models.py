@@ -1,5 +1,5 @@
-from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
 db = SQLAlchemy()
 
@@ -8,9 +8,12 @@ class RoleRequest(db.Model):
     alliance = db.Column(db.String(50))
     player = db.Column(db.String(50))
     role = db.Column(db.String(50))
-    coordinates = db.Column(db.String(50), nullable=True)
+    coordinates = db.Column(db.String(100))
     request_time = db.Column(db.DateTime, default=datetime.utcnow)
     assign_time = db.Column(db.DateTime, nullable=True)
 
-    def __repr__(self):
-        return f'<RoleRequest {self.player} - {self.role}>'
+    def __init__(self, alliance, player, role, coordinates=None, request_time=None, assign_time=None):
+        self.alliance = alliance
+        self.player = player
+        self.role = role
+        self.coordinates
