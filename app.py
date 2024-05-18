@@ -1,8 +1,14 @@
-from flask import Flask, request, render_template, redirect, url_for, jsonify
+from flask import Flask, request, render_template, redirect, url_for, jsonify, session
+from flask_session import Session
 from collections import deque
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
+
+# Configure the session to use filesystem (instead of signed cookies)
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SECRET_KEY'] = 'supersecretkey'
+Session(app)
 
 class RoleManager:
     def __init__(self):
@@ -53,6 +59,9 @@ role_manager = RoleManager()
 
 @app.route('/')
 def index():
+    if 'username' not in session:
+        session['username'] = f'user_{datetime.now().timestamp()}'
+    
     return render_template('index.html', roles=role_manager.roles, assignments=role_manager.current_assignments, start_times=role_manager.assignment_start_times)
 
 @app.route('/request_role', methods=['POST'])
@@ -74,4 +83,4 @@ def release_role(role):
     return jsonify({'status': 'success', 'player': player})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=80, debug=True)
