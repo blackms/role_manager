@@ -16,4 +16,6 @@ class RoleRequest(db.Model):
         self.alliance = alliance
         self.player = player
         self.role = role
-        self.coordinates
+        self.coordinates = coordinates
+        self.request_time = request_time if request_time else datetime.utcnow()
+        self.assign_time = assign_time

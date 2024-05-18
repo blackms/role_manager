@@ -1,5 +1,5 @@
 from flask import render_template, redirect, url_for, jsonify, request, session
-from datetime import datetime
+from datetime import datetime, timedelta
 from models import db, RoleRequest
 from collections import deque
 import re
@@ -51,7 +51,7 @@ class RoleManager:
             db.session.commit()
             self.current_assignments[role] = next_request
             self.assignment_start_times[role] = next_request.assign_time
-            print(f'{next_request.player} has been assigned the role of {role}')
+            print(f'{next_request.player} has been assigned the role of {role} at {next_request.assign_time}')
             return next_request
         return None
 
@@ -92,7 +92,7 @@ def init_routes(app):
     @app.route('/assign_role/<role>')
     def assign_role(role):
         player_request = role_manager.assign_role(role)
-        return jsonify({'status': 'success', 'player': f'[{player_request.alliance}]{player_request.player}'})
+        return jsonify({'status': 'success', 'player': f'[{player_request.alliance}]{player_request.player}', 'assign_time': player_request.assign_time.isoformat()})
 
     @app.route('/release_role/<role>')
     def release_role(role):
