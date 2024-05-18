@@ -56,8 +56,8 @@
                 <li class="list-group-item">
                     <strong>{{ role }}:</strong>
                     <ul class="list-group mt-2">
-                        {% for player, coordinates in queue %}
-                            <li class="list-group-item">{{ player }}{% if coordinates %} ({{ coordinates }}){% endif %}</li>
+                        {% for request in queue %}
+                            <li class="list-group-item">{{ request.player }}{% if request.coordinates %} ({{ request.coordinates }}){% endif %}</li>
                         {% endfor %}
                     </ul>
                 </li>

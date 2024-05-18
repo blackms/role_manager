@@ -33,12 +33,13 @@ class RoleManager:
             new_request = RoleRequest(alliance=alliance, player=player_name, role=role, coordinates=coordinates)
             db.session.add(new_request)
             db.session.commit()
-            self.roles[role].append(new_request)
+            self.roles[role].append(new_request.id)
             print(f'{player} requested the role of {role} with coordinates {coordinates}')
 
     def assign_role(self, role):
         if self.roles[role]:
-            next_request = self.roles[role].popleft()
+            next_request_id = self.roles[role].popleft()
+            next_request = RoleRequest.query.get(next_request_id)
             next_request.assign_time = datetime.now()
             db.session.commit()
             self.current_assignments[role] = next_request.player
@@ -69,8 +70,9 @@ def init_routes(app):
         if 'username' not in session:
             session['username'] = f'user_{datetime.now().timestamp()}'
         
+        roles_with_requests = {role: [RoleRequest.query.get(req_id) for req_id in queue] for role, queue in role_manager.roles.items()}
         start_times = {role: (time.isoformat() if time else None) for role, time in role_manager.assignment_start_times.items()}
-        return render_template('index.html', roles=role_manager.roles, assignments=role_manager.current_assignments, start_times=start_times)
+        return render_template('index.html', roles=roles_with_requests, assignments=role_manager.current_assignments, start_times=start_times)
 
     @app.route('/request_role', methods=['POST'])
     def request_role():
