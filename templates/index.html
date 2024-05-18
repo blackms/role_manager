@@ -33,7 +33,7 @@
 <h2 class="mb-3">Current Roles</h2>
 <ul class="list-group mb-4">
     {% for role, player_request in assignments.items() %}
-        <li class="list-group-item d-flex justify-content-between align-items-center">
+        <li class="list-group-item d-flex justify-content-between align-items-center" id="role_{{ role }}">
             {{ role | replace('_', ' ') }}: {{ '[{}]{}'.format(player_request.alliance, player_request.player) if player_request else 'None' }}
             <div>
                 {% if player_request %}
@@ -60,16 +60,59 @@
     {% endfor %}
 </ul>
 <script>
-    $(document).ready(function() {
+    document.addEventListener('DOMContentLoaded', function() {
         {% for role, player_request in assignments.items() %}
-            {% if player_request and start_times[role] %}
-                var serverStartTime = new Date("{{ start_times[role] }}");
-                var now = new Date();
-                var elapsed = Math.floor((now - serverStartTime) / 1000);
-                var remaining = 300 - elapsed; // 5 minutes (300 seconds)
-                startTimer("{{ role }}", remaining);
+            {% if player_request %}
+                updateTimer("{{ role }}");
             {% endif %}
         {% endfor %}
     });
+
+    function updateTimer(role) {
+        $.get('/get_remaining_time/' + role, function(data) {
+            var display = document.getElementById('time_' + role);
+            var timer = data.remaining_time;
+            var minutes, seconds;
+
+            var interval = setInterval(function () {
+                minutes = parseInt(timer / 60, 10);
+                seconds = parseInt(timer % 60, 10);
+
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+
+                display.textContent = minutes + ":" + seconds;
+
+                if (--timer < 0) {
+                    clearInterval(interval);
+                    releaseRole(role);
+                }
+            }, 1000);
+        });
+    }
+
+    function releaseRole(role) {
+        $.get('/release_role/' + role, function(data) {
+            location.reload();
+        });
+    }
+
+    function assignRole(role) {
+        $.get('/assign_role/' + role, function(data) {
+            if (data.status === 'success') {
+                var roleElement = document.getElementById('role_' + role);
+                roleElement.innerHTML = `
+                    ${data.role}: [${data.player}]
+                    <div>
+                        <span id="time_${role}" class="badge badge-primary badge-pill">05:00</span>
+                        <a href="#" onclick="releaseRole('${role}')" class="btn btn-danger btn-sm ml-2">Release</a>
+                    </div>
+                `;
+                updateTimer(role);
+            } else {
+                alert(data.message);
+            }
+        });
+    }
 </script>
 {% endblock %}

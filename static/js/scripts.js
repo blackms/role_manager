@@ -34,6 +34,16 @@ function assignRole(role) {
         var now = new Date();
         var elapsed = Math.floor((now - startTime) / 1000);
         var remaining = 300 - elapsed; // 5 minutes (300 seconds)
+
+        var display = document.getElementById('time_' + role);
+        if (!display) {
+            var roleElement = document.querySelector('[onclick="assignRole(\'' + role + '\')"]').closest('.list-group-item');
+            var timerElement = document.createElement('span');
+            timerElement.id = 'time_' + role;
+            timerElement.className = 'badge badge-primary badge-pill';
+            roleElement.querySelector('div').insertBefore(timerElement, roleElement.querySelector('a'));
+        }
+
         startTimer(role, remaining);
     });
 }

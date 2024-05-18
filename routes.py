@@ -65,6 +65,17 @@ class RoleManager:
         print(f'{player_request.player} has finished the role of {role}')
         return player_request
 
+    def get_remaining_time(self, role):
+        role_key = role.replace(' ', '_')
+        if role_key in self.assignment_start_times and self.assignment_start_times[role_key]:
+            elapsed = datetime.utcnow() - self.assignment_start_times[role_key]
+            remaining = timedelta(minutes=5) - elapsed
+            if remaining.total_seconds() > 0:
+                return int(remaining.total_seconds())
+            else:
+                self.release_role(role)
+        return 0
+
     def parse_player_name(self, player):
         if player.startswith('[') and ']' in player:
             alliance, player_name = player[1:].split(']', 1)
@@ -95,9 +106,22 @@ def init_routes(app):
     @app.route('/assign_role/<role>')
     def assign_role(role):
         player_request = role_manager.assign_role(role)
-        return jsonify({'status': 'success', 'player': f'[{player_request.alliance}]{player_request.player}', 'assign_time': player_request.assign_time.isoformat()})
+        if player_request:
+            remaining_time = role_manager.get_remaining_time(role)
+            return jsonify({
+                'status': 'success', 
+                'player': f'[{player_request.alliance}]{player_request.player}', 
+                'remaining_time': remaining_time,
+                'role': role.replace('_', ' ')
+            })
+        return jsonify({'status': 'failure', 'message': 'No player in queue'})
 
     @app.route('/release_role/<role>')
     def release_role(role):
         player_request = role_manager.release_role(role)
         return jsonify({'status': 'success', 'player': f'[{player_request.alliance}]{player_request.player}'})
+
+    @app.route('/get_remaining_time/<role>')
+    def get_remaining_time(role):
+        remaining_time = role_manager.get_remaining_time(role)
+        return jsonify({'remaining_time': remaining_time})
