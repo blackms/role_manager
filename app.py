@@ -2,6 +2,7 @@ from flask import Flask, request, render_template, redirect, url_for, jsonify, s
 from flask_session import Session
 from collections import deque
 from datetime import datetime, timedelta
+import json
 
 app = Flask(__name__)
 
@@ -62,7 +63,8 @@ def index():
     if 'username' not in session:
         session['username'] = f'user_{datetime.now().timestamp()}'
     
-    return render_template('index.html', roles=role_manager.roles, assignments=role_manager.current_assignments, start_times=role_manager.assignment_start_times)
+    start_times = {role: (time.isoformat() if time else None) for role, time in role_manager.assignment_start_times.items()}
+    return render_template('index.html', roles=role_manager.roles, assignments=role_manager.current_assignments, start_times=start_times)
 
 @app.route('/request_role', methods=['POST'])
 def request_role():
