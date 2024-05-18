@@ -7,25 +7,25 @@ import re
 class RoleManager:
     def __init__(self):
         self.roles = {
-            'secretary of strategy': deque(),
-            'secretary of security': deque(),
-            'secretary of development': deque(),
-            'secretary of science': deque(),
-            'secretary of interior': deque()
+            'secretary_of_strategy': deque(),
+            'secretary_of_security': deque(),
+            'secretary_of_development': deque(),
+            'secretary_of_science': deque(),
+            'secretary_of_interior': deque()
         }
         self.current_assignments = {
-            'secretary of strategy': None,
-            'secretary of security': None,
-            'secretary of development': None,
-            'secretary of science': None,
-            'secretary of interior': None
+            'secretary_of_strategy': None,
+            'secretary_of_security': None,
+            'secretary_of_development': None,
+            'secretary_of_science': None,
+            'secretary_of_interior': None
         }
         self.assignment_start_times = {
-            'secretary of strategy': None,
-            'secretary of security': None,
-            'secretary of development': None,
-            'secretary of science': None,
-            'secretary of interior': None
+            'secretary_of_strategy': None,
+            'secretary_of_security': None,
+            'secretary_of_development': None,
+            'secretary_of_science': None,
+            'secretary_of_interior': None
         }
 
     def normalize_player_name(self, player):
@@ -34,31 +34,34 @@ class RoleManager:
         return player
 
     def request_role(self, player, role, coordinates=None):
-        if role in self.roles:
+        role_key = role.replace(' ', '_')
+        if role_key in self.roles:
             player = self.normalize_player_name(player)
             alliance, player_name = self.parse_player_name(player)
             new_request = RoleRequest(alliance=alliance, player=player_name, role=role, coordinates=coordinates, request_time=datetime.utcnow())
             db.session.add(new_request)
             db.session.commit()
-            self.roles[role].append(new_request.id)
+            self.roles[role_key].append(new_request.id)
             print(f'{player} requested the role of {role} with coordinates {coordinates}')
 
     def assign_role(self, role):
-        if self.roles[role]:
-            next_request_id = self.roles[role].popleft()
+        role_key = role.replace(' ', '_')
+        if self.roles[role_key]:
+            next_request_id = self.roles[role_key].popleft()
             next_request = RoleRequest.query.get(next_request_id)
             next_request.assign_time = datetime.utcnow()
             db.session.commit()
-            self.current_assignments[role] = next_request
-            self.assignment_start_times[role] = next_request.assign_time
+            self.current_assignments[role_key] = next_request
+            self.assignment_start_times[role_key] = next_request.assign_time
             print(f'{next_request.player} has been assigned the role of {role} at {next_request.assign_time}')
             return next_request
         return None
 
     def release_role(self, role):
-        player_request = self.current_assignments[role]
-        self.current_assignments[role] = None
-        self.assignment_start_times[role] = None
+        role_key = role.replace(' ', '_')
+        player_request = self.current_assignments[role_key]
+        self.current_assignments[role_key] = None
+        self.assignment_start_times[role_key] = None
         print(f'{player_request.player} has finished the role of {role}')
         return player_request
 

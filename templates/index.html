@@ -17,11 +17,11 @@
     <div class="form-group">
         <label for="role">Requested Role:</label>
         <select class="form-control" id="role" name="role" required>
-            <option value="secretary of strategy">Secretary of Strategy</option>
-            <option value="secretary of security">Secretary of Security</option>
-            <option value="secretary of development">Secretary of Development</option>
-            <option value="secretary of science">Secretary of Science</option>
-            <option value="secretary of interior">Secretary of Interior</option>
+            <option value="secretary_of_strategy">Secretary of Strategy</option>
+            <option value="secretary_of_security">Secretary of Security</option>
+            <option value="secretary_of_development">Secretary of Development</option>
+            <option value="secretary_of_science">Secretary of Science</option>
+            <option value="secretary_of_interior">Secretary of Interior</option>
         </select>
     </div>
     <div class="form-group">
@@ -34,10 +34,10 @@
 <ul class="list-group mb-4">
     {% for role, player_request in assignments.items() %}
         <li class="list-group-item d-flex justify-content-between align-items-center">
-            {{ role }}: {{ '[{}]{}'.format(player_request.alliance, player_request.player) if player_request else 'None' }}
+            {{ role | replace('_', ' ') }}: {{ '[{}]{}'.format(player_request.alliance, player_request.player) if player_request else 'None' }}
             <div>
                 {% if player_request %}
-                <span id="time_{{ role | replace(' ', '_') }}" class="badge badge-primary badge-pill">05:00</span>
+                <span id="time_{{ role }}" class="badge badge-primary badge-pill">05:00</span>
                 <a href="#" onclick="releaseRole('{{ role }}')" class="btn btn-danger btn-sm ml-2">Release</a>
                 {% else %}
                 <a href="#" onclick="assignRole('{{ role }}')" class="btn btn-success btn-sm">Assign</a>
@@ -50,7 +50,7 @@
 <ul class="list-group">
     {% for role, queue in roles.items() %}
         <li class="list-group-item">
-            <strong>{{ role }}:</strong>
+            <strong>{{ role | replace('_', ' ') }}:</strong>
             <ul class="list-group mt-2">
                 {% for request in queue %}
                     <li class="list-group-item">{{ '[{}]{}'.format(request.alliance, request.player) }}{% if request.coordinates %} ({{ request.coordinates }}){% endif %}</li>

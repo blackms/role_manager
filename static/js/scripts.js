@@ -1,5 +1,9 @@
 function startTimer(role, duration) {
-    var display = document.getElementById('time_' + role.replace(' ', '_'));
+    var display = document.getElementById('time_' + role);
+    if (!display) {
+        console.error('Element not found for role:', role);
+        return;
+    }
     var timer = duration, minutes, seconds;
 
     var interval = setInterval(function () {
@@ -19,13 +23,13 @@ function startTimer(role, duration) {
 }
 
 function releaseRole(role) {
-    $.get('/release_role/' + role, function(data) {
+    $.get('/release_role/' + role.replace('_', ' '), function(data) {
         location.reload();
     });
 }
 
 function assignRole(role) {
-    $.get('/assign_role/' + role, function(data) {
+    $.get('/assign_role/' + role.replace('_', ' '), function(data) {
         var startTime = new Date(data.assign_time);
         var now = new Date();
         var elapsed = Math.floor((now - startTime) / 1000);
