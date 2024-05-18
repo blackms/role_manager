@@ -1,81 +1,74 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Role Manager</title>
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
-</head>
-<body>
-    <div class="container mt-5">
-        <h1 class="mb-4">Role Manager</h1>
-        <form action="/request_role" method="POST" class="mb-4">
-            <div class="form-group">
-                <label for="player">Player Name:</label>
-                <input type="text" class="form-control" id="player" name="player" required>
-            </div>
-            <div class="form-group">
-                <label for="role">Requested Role:</label>
-                <select class="form-control" id="role" name="role" required>
-                    <option value="secretary of strategy">Secretary of Strategy</option>
-                    <option value="secretary of security">Secretary of Security</option>
-                    <option value="secretary of development">Secretary of Development</option>
-                    <option value="secretary of science">Secretary of Science</option>
-                    <option value="secretary of interior">Secretary of Interior</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="coordinates">Coordinates (optional):</label>
-                <input type="text" class="form-control" id="coordinates" name="coordinates">
-            </div>
-            <button type="submit" class="btn btn-primary">Request Role</button>
-        </form>
-        <h2 class="mb-3">Current Roles</h2>
-        <ul class="list-group mb-4">
-            {% for role, player in assignments.items() %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    {{ role }}: {{ player if player else 'None' }}
-                    <div>
-                        {% if player %}
-                        <span id="time_{{ role | replace(' ', '_') }}" class="badge badge-primary badge-pill">05:00</span>
-                        <a href="#" onclick="releaseRole('{{ role }}')" class="btn btn-danger btn-sm ml-2">Release</a>
-                        {% else %}
-                        <a href="#" onclick="assignRole('{{ role }}')" class="btn btn-success btn-sm">Assign</a>
-                        {% endif %}
-                    </div>
-                </li>
-            {% endfor %}
-        </ul>
-        <h2 class="mb-3">Waiting Queue</h2>
-        <ul class="list-group">
-            {% for role, queue in roles.items() %}
-                <li class="list-group-item">
-                    <strong>{{ role }}:</strong>
-                    <ul class="list-group mt-2">
-                        {% for request in queue %}
-                            <li class="list-group-item">{{ request.player }}{% if request.coordinates %} ({{ request.coordinates }}){% endif %}</li>
-                        {% endfor %}
-                    </ul>
-                </li>
-            {% endfor %}
-        </ul>
+{% extends "base.html" %}
+
+{% block title %}Home - Role Manager{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Role Manager</h1>
+<form action="/request_role" method="POST" class="mb-4">
+    <div class="form-group">
+        <label for="player">Player Name:</label>
+        <input type="text" class="form-control" id="player" name="player" required>
     </div>
-    <script>
-        $(document).ready(function() {
-            {% for role, player in assignments.items() %}
-                {% if player and start_times[role] %}
-                    var startTime = new Date("{{ start_times[role] }}");
-                    var now = new Date();
-                    var elapsed = Math.floor((now - startTime) / 1000);
-                    var remaining = 300 - elapsed; // 5 minutes (300 seconds)
-                    startTimer("{{ role }}", remaining);
+    <div class="form-group">
+        <label for="role">Requested Role:</label>
+        <select class="form-control" id="role" name="role" required>
+            <option value="secretary of strategy">Secretary of Strategy</option>
+            <option value="secretary of security">Secretary of Security</option>
+            <option value="secretary of development">Secretary of Development</option>
+            <option value="secretary of science">Secretary of Science</option>
+            <option value="secretary of interior">Secretary of Interior</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="coordinates">Coordinates (optional):</label>
+        <input type="text" class="form-control" id="coordinates" name="coordinates">
+    </div>
+    <button type="submit" class="btn btn-primary">Request Role</button>
+</form>
+<h2 class="mb-3">Current Roles</h2>
+<ul class="list-group mb-4">
+    {% for role, player in assignments.items() %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            {{ role }}: {{ player if player else 'None' }}
+            <div>
+                {% if player %}
+                <span id="time_{{ role | replace(' ', '_') }}" class="badge badge-primary badge-pill">05:00</span>
+                <a href="#" onclick="releaseRole('{{ role }}')" class="btn btn-danger btn-sm ml-2">Release</a>
+                {% else %}
+                <a href="#" onclick="assignRole('{{ role }}')" class="btn btn-success btn-sm">Assign</a>
                 {% endif %}
-            {% endfor %}
-        });
-    </script>
-</body>
-</html>
+            </div>
+        </li>
+    {% endfor %}
+</ul>
+<h2 class="mb-3">Waiting Queue</h2>
+<ul class="list-group">
+    {% for role, queue in roles.items() %}
+        <li class="list-group-item">
+            <strong>{{ role }}:</strong>
+            <ul class="list-group mt-2">
+                {% for request in queue %}
+                    <li class="list-group-item">{{ request.player }}{% if request.coordinates %} ({{ request.coordinates }}){% endif %}</li>
+                {% endfor %}
+            </ul>
+        </li>
+    {% endfor %}
+</ul>
+<script>
+    $(document).ready(function() {
+        {% for role, player in assignments.items() %}
+            {% if player and start_times[role] %}
+                var startTime = new Date("{{ start_times[role] }}");
+                var now = new Date();
+                var elapsed = Math.floor((now - startTime) / 1000);
+                var remaining = 300 - elapsed; // 5 minutes (300 seconds)
+                startTimer("{{ role }}", remaining);
+            {% endif %}
+        {% endfor %}
+    });
+</script>
+{% endblock %}
