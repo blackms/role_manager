@@ -1,3 +1,4 @@
 *cpython*
 flask_session
 flask_session/*
+*.pyc
