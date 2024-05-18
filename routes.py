@@ -2,6 +2,7 @@ from flask import render_template, redirect, url_for, jsonify, request, session
 from datetime import datetime
 from models import db, RoleRequest
 from collections import deque
+import re
 
 class RoleManager:
     def __init__(self):
@@ -27,8 +28,14 @@ class RoleManager:
             'secretary of interior': None
         }
 
+    def normalize_player_name(self, player):
+        # Remove special characters and convert to lowercase
+        player = re.sub(r'[^a-zA-Z0-9\[\]]', '', player).lower()
+        return player
+
     def request_role(self, player, role, coordinates=None):
         if role in self.roles:
+            player = self.normalize_player_name(player)
             alliance, player_name = self.parse_player_name(player)
             new_request = RoleRequest(alliance=alliance, player=player_name, role=role, coordinates=coordinates)
             db.session.add(new_request)
@@ -42,18 +49,18 @@ class RoleManager:
             next_request = RoleRequest.query.get(next_request_id)
             next_request.assign_time = datetime.now()
             db.session.commit()
-            self.current_assignments[role] = next_request.player
+            self.current_assignments[role] = next_request
             self.assignment_start_times[role] = next_request.assign_time
             print(f'{next_request.player} has been assigned the role of {role}')
-            return next_request.player
+            return next_request
         return None
 
     def release_role(self, role):
-        player = self.current_assignments[role]
+        player_request = self.current_assignments[role]
         self.current_assignments[role] = None
         self.assignment_start_times[role] = None
-        print(f'{player} has finished the role of {role}')
-        return player
+        print(f'{player_request.player} has finished the role of {role}')
+        return player_request
 
     def parse_player_name(self, player):
         if player.startswith('[') and ']' in player:
@@ -84,18 +91,10 @@ def init_routes(app):
 
     @app.route('/assign_role/<role>')
     def assign_role(role):
-        player = role_manager.assign_role(role)
-        return jsonify({'status': 'success', 'player': player})
+        player_request = role_manager.assign_role(role)
+        return jsonify({'status': 'success', 'player': f'[{player_request.alliance}]{player_request.player}'})
 
     @app.route('/release_role/<role>')
     def release_role(role):
-        player = role_manager.release_role(role)
-        return jsonify({'status': 'success', 'player': player})
-
-    @app.route('/about')
-    def about():
-        return render_template('about.html')
-
-    @app.route('/contact')
-    def contact():
-        return render_template('contact.html')
+        player_request = role_manager.release_role(role)
+        return jsonify({'status': 'success', 'player': f'[{player_request.alliance}]{player_request.player}'})

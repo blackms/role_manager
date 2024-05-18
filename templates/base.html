@@ -25,6 +25,14 @@
             color: #ffffff;
             border: 1px solid #ced4da;
         }
+        .invalid {
+            background-color: #dc3545;
+            color: #ffffff;
+        }
+        .error-message {
+            color: #dc3545;
+            font-weight: bold;
+        }
     </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
@@ -56,5 +64,43 @@
         {% block content %}
         {% endblock %}
     </div>
+    <script>
+        function validatePlayerName() {
+            var playerNameField = document.getElementById('player');
+            var playerName = playerNameField.value;
+            var allianceTagPattern = /^\[.+\].+$/;
+            var errorMessage = document.getElementById('player-error');
+
+            if (!allianceTagPattern.test(playerName)) {
+                playerNameField.classList.add('invalid');
+                errorMessage.style.display = 'block';
+                return false;
+            } else {
+                playerNameField.classList.remove('invalid');
+                errorMessage.style.display = 'none';
+                return true;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var requestRoleButton = document.getElementById('request-role-button');
+            var playerNameField = document.getElementById('player');
+
+            if (requestRoleButton) {
+                requestRoleButton.addEventListener('click', function(event) {
+                    if (!validatePlayerName()) {
+                        event.preventDefault();
+                    }
+                });
+            }
+
+            if (playerNameField) {
+                playerNameField.addEventListener('input', function() {
+                    playerNameField.classList.remove('invalid');
+                    document.getElementById('player-error').style.display = 'none';
+                });
+            }
+        });
+    </script>
 </body>
 </html>
