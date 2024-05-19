@@ -1,21 +1,14 @@
-from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
 class RoleRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    alliance = db.Column(db.String(50))
-    player = db.Column(db.String(50))
-    role = db.Column(db.String(50))
+    alliance = db.Column(db.String(50), nullable=False)
+    player = db.Column(db.String(50), nullable=False)
+    role = db.Column(db.String(50), nullable=False)
     coordinates = db.Column(db.String(100))
-    request_time = db.Column(db.DateTime, default=datetime.utcnow)
-    assign_time = db.Column(db.DateTime, nullable=True)
-
-    def __init__(self, alliance, player, role, coordinates=None, request_time=None, assign_time=None):
-        self.alliance = alliance
-        self.player = player
-        self.role = role
-        self.coordinates = coordinates
-        self.request_time = request_time if request_time else datetime.utcnow()
-        self.assign_time = assign_time
+    request_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    assign_time = db.Column(db.DateTime)
+    status = db.Column(db.String(10), nullable=False, default='waiting')

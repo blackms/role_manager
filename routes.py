@@ -1,127 +1,146 @@
-from flask import render_template, redirect, url_for, jsonify, request, session
-from datetime import datetime, timedelta
+from flask import render_template, request, jsonify
 from models import db, RoleRequest
-from collections import deque
-import re
+from role_manager import role_manager
+from datetime import datetime
+import sqlalchemy as sa
+import logging
 
-class RoleManager:
-    def __init__(self):
-        self.roles = {
-            'secretary_of_strategy': deque(),
-            'secretary_of_security': deque(),
-            'secretary_of_development': deque(),
-            'secretary_of_science': deque(),
-            'secretary_of_interior': deque()
-        }
-        self.current_assignments = {
-            'secretary_of_strategy': None,
-            'secretary_of_security': None,
-            'secretary_of_development': None,
-            'secretary_of_science': None,
-            'secretary_of_interior': None
-        }
-        self.assignment_start_times = {
-            'secretary_of_strategy': None,
-            'secretary_of_security': None,
-            'secretary_of_development': None,
-            'secretary_of_science': None,
-            'secretary_of_interior': None
-        }
 
-    def normalize_player_name(self, player):
-        # Remove special characters and convert to lowercase
-        player = re.sub(r'[^a-zA-Z0-9\[\]]', '', player).lower()
-        return player
+# Configura il logging
+logging.basicConfig(level=logging.DEBUG)
 
-    def request_role(self, player, role, coordinates=None):
-        role_key = role.replace(' ', '_')
-        if role_key in self.roles:
-            player = self.normalize_player_name(player)
-            alliance, player_name = self.parse_player_name(player)
-            new_request = RoleRequest(alliance=alliance, player=player_name, role=role, coordinates=coordinates, request_time=datetime.utcnow())
-            db.session.add(new_request)
-            db.session.commit()
-            self.roles[role_key].append(new_request.id)
-            print(f'{player} requested the role of {role} with coordinates {coordinates}')
-
-    def assign_role(self, role):
-        role_key = role.replace(' ', '_')
-        if self.roles[role_key]:
-            next_request_id = self.roles[role_key].popleft()
-            next_request = RoleRequest.query.get(next_request_id)
-            next_request.assign_time = datetime.utcnow()
-            db.session.commit()
-            self.current_assignments[role_key] = next_request
-            self.assignment_start_times[role_key] = next_request.assign_time
-            print(f'{next_request.player} has been assigned the role of {role} at {next_request.assign_time}')
-            return next_request
-        return None
-
-    def release_role(self, role):
-        role_key = role.replace(' ', '_')
-        player_request = self.current_assignments[role_key]
-        self.current_assignments[role_key] = None
-        self.assignment_start_times[role_key] = None
-        print(f'{player_request.player} has finished the role of {role}')
-        return player_request
-
-    def get_remaining_time(self, role):
-        role_key = role.replace(' ', '_')
-        if role_key in self.assignment_start_times and self.assignment_start_times[role_key]:
-            elapsed = datetime.utcnow() - self.assignment_start_times[role_key]
-            remaining = timedelta(minutes=5) - elapsed
-            if remaining.total_seconds() > 0:
-                return int(remaining.total_seconds())
-            else:
-                self.release_role(role)
-        return 0
-
-    def parse_player_name(self, player):
-        if player.startswith('[') and ']' in player:
-            alliance, player_name = player[1:].split(']', 1)
-        else:
-            alliance, player_name = None, player
-        return alliance, player_name
-
-role_manager = RoleManager()
 
 def init_routes(app):
+
     @app.route('/')
     def index():
-        if 'username' not in session:
-            session['username'] = f'user_{datetime.now().timestamp()}'
-        
-        roles_with_requests = {role: [RoleRequest.query.get(req_id) for req_id in queue] for role, queue in role_manager.roles.items()}
-        start_times = {role: (time.isoformat() if time else None) for role, time in role_manager.assignment_start_times.items()}
-        return render_template('index.html', roles=roles_with_requests, assignments=role_manager.current_assignments, start_times=start_times)
+        roles_with_requests = role_manager.get_roles_with_requests()
+        current_assignments = role_manager.current_assignments
+        start_times = role_manager.start_times
+        remaining_times = {
+            role: role_manager.get_remaining_time(role) if role_manager.is_role_assigned(role) else ''
+            for role in role_manager.roles.keys()
+        }
+        return render_template('index.html', roles=roles_with_requests, assignments=current_assignments, start_times=start_times, remaining_times=remaining_times)
 
     @app.route('/request_role', methods=['POST'])
     def request_role():
-        player = request.form['player']
+        player_name = request.form['player']
         role = request.form['role']
-        coordinates = request.form.get('coordinates', None)
-        role_manager.request_role(player, role, coordinates)
-        return redirect(url_for('index'))
+        coordinates = request.form['coordinates']
+        if not coordinates:
+            coordinates = None
+
+        alliance, player = player_name.split(']')
+        alliance = alliance[1:]
+        new_request = RoleRequest(
+            alliance=alliance,
+            player=player,
+            role=role,
+            coordinates=coordinates,
+            request_time=datetime.utcnow(),
+            status='waiting'
+        )
+        db.session.add(new_request)
+        db.session.commit()
+        role_manager.add_request(role, new_request)
+
+        return jsonify({'status': 'success'})
 
     @app.route('/assign_role/<role>')
     def assign_role(role):
         player_request = role_manager.assign_role(role)
         if player_request:
+            player_request.status = 'assigned'
+            player_request.assign_time = datetime.utcnow()
+            db.session.commit()
             remaining_time = role_manager.get_remaining_time(role)
-            return jsonify({
-                'status': 'success', 
-                'player': f'[{player_request.alliance}]{player_request.player}', 
-                'remaining_time': remaining_time,
-                'role': role.replace('_', ' ')
-            })
-        return jsonify({'status': 'failure', 'message': 'No player in queue'})
+            return jsonify({'status': 'success', 'player': f'[{player_request.alliance}]{player_request.player}', 'remaining_time': remaining_time})
+        return jsonify({'status': 'failure'})
 
     @app.route('/release_role/<role>')
     def release_role(role):
-        player_request = role_manager.release_role(role)
-        return jsonify({'status': 'success', 'player': f'[{player_request.alliance}]{player_request.player}'})
+        role_manager.release_role(role)
+        return jsonify({'status': 'success'})
 
-    @app.route('/get_remaining_time/<role>')
-    def get_remaining_time(role):
-        remaining_time = role_manager.get_remaining_time(role)
-        return jsonify({'remaining_time': remaining_time})
+    @app.route('/get_initial_state')
+    def get_initial_state():
+        roles_with_requests = role_manager.get_roles_with_requests()
+        current_assignments = role_manager.current_assignments
+        start_times = role_manager.start_times
+        remaining_times = {
+            role: role_manager.get_remaining_time(role) if role_manager.is_role_assigned(role) else ''
+            for role in role_manager.roles.keys()
+        }
+        return jsonify({'roles': roles_with_requests, 'assignments': current_assignments, 'start_times': remaining_times})
+
+    @app.route('/dashboard')
+    def dashboard():
+        return render_template('dashboard.html')
+
+    @app.route('/api/dashboard/most_requested_role', methods=['GET'])
+    def most_requested_role():
+        results = db.session.query(
+            RoleRequest.role,
+            sa.func.count(RoleRequest.id).label('count')
+        ).group_by(RoleRequest.role).order_by(sa.desc('count')).all()
+
+        logging.debug(f"Most requested roles: {results}")
+
+        result_list = [{'role': result.role, 'count': result.count} for result in results]
+
+        return jsonify(result_list)
+
+    @app.route('/api/dashboard/top_requester', methods=['GET'])
+    def top_requester():
+        results = db.session.query(
+            RoleRequest.player,
+            sa.func.count(RoleRequest.id).label('count')
+        ).group_by(RoleRequest.player).order_by(sa.desc('count')).limit(10).all()
+
+        logging.debug(f"Top requesters: {results}")
+
+        result_list = [{'player': result.player, 'count': result.count} for result in results]
+
+        return jsonify(result_list)
+
+    @app.route('/api/dashboard/role_distribution', methods=['GET'])
+    def role_distribution():
+        results = db.session.query(
+            RoleRequest.role,
+            sa.func.count(RoleRequest.id).label('count')
+        ).group_by(RoleRequest.role).all()
+
+        logging.debug(f"Role distribution: {results}")
+
+        result_list = [{'role': result.role, 'count': result.count} for result in results]
+
+        return jsonify(result_list)
+
+    @app.route('/api/dashboard/requests_per_day', methods=['GET'])
+    def requests_per_day():
+        results = db.session.query(
+            sa.func.strftime('%Y-%m-%d', RoleRequest.request_time).label('day'),
+            sa.func.count(RoleRequest.id).label('count')
+        ).group_by(
+            sa.func.strftime('%Y-%m-%d', RoleRequest.request_time)
+        ).all()
+
+        logging.debug(f"Requests per day: {results}")
+
+        result_list = [{'day': datetime.strptime(result.day, '%Y-%m-%d').isoformat(), 'count': result.count} for result in results]
+
+        return jsonify(result_list)
+    
+    @app.route('/api/dashboard/alliance_distribution', methods=['GET'])
+    def alliance_distribution():
+        results = db.session.query(
+            RoleRequest.alliance,
+            sa.func.count(RoleRequest.id).label('count')
+        ).group_by(RoleRequest.alliance).all()
+
+        logging.debug(f"Alliance distribution: {results}")
+
+        result_list = [{'alliance': result.alliance, 'count': result.count} for result in results]
+
+        return jsonify(result_list)
