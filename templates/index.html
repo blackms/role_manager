@@ -70,7 +70,7 @@
         var timer = remainingTime;
         var minutes, seconds;
 
-        var interval = setInterval(function () {
+        var interval = setInterval(function() {
             minutes = parseInt(timer / 60, 10);
             seconds = parseInt(timer % 60, 10);
 
@@ -91,7 +91,7 @@
             if (data.status === 'success') {
                 location.reload();
             } else {
-                alert(data.message);
+                alert('Failed to release role.');
             }
         });
     }
@@ -101,37 +101,30 @@
             if (data.status === 'success') {
                 var roleElement = document.getElementById('role_' + role);
                 roleElement.innerHTML = `
-                    ${data.role}: ${data.player}
+                    ${role}: ${data.player}
                     <div>
                         <span id="time_${role}" class="badge badge-primary badge-pill">05:00</span>
                         <a href="#" onclick="releaseRole('${role}')" class="btn btn-danger btn-sm ml-2">Release</a>
                     </div>
                 `;
-                updateTimer(role, 300);  // Start the countdown from 300 seconds (5 minutes)
+                updateTimer(role, 300); // 300 seconds = 5 minutes
             } else {
-                alert(data.message);
+                alert('Failed to assign role.');
             }
         });
     }
 
     $(document).ready(function() {
-        $('#request-role-form').on('submit', function(e) {
-            e.preventDefault();
-
+        $('#request-role-form').submit(function(event) {
+            event.preventDefault();
             $.post('/request_role', $(this).serialize(), function(data) {
                 if (data.status === 'success') {
                     location.reload();
                 } else {
-                    alert('Error submitting the role request.');
+                    alert('Failed to request role.');
                 }
             });
         });
-
-        {% for role, player_request in assignments.items() %}
-            {% if player_request %}
-                updateTimer("{{ role }}", {{ remaining_times[role] if player_request else 0 }});
-            {% endif %}
-        {% endfor %}
     });
 </script>
 {% endblock %}
