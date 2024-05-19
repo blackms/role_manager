@@ -3,12 +3,14 @@
 {% block title %}Home - Role Manager{% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 {% endblock %}
 
 {% block content %}
 <h1 class="mb-4">Role Manager</h1>
-<form id="roleRequestForm" class="mb-4">
+<form id="request-role-form" class="mb-4">
     <div class="form-group">
         <label for="player">Player Name:</label>
         <input type="text" class="form-control" id="player" name="player" required>
@@ -28,16 +30,17 @@
         <label for="coordinates">Coordinates (optional):</label>
         <input type="text" class="form-control" id="coordinates" name="coordinates">
     </div>
-    <button type="submit" class="btn btn-primary" id="request-role-button">Request Role</button>
+    <button type="submit" class="btn btn-primary">Request Role</button>
 </form>
+
 <h2 class="mb-3">Current Roles</h2>
-<ul class="list-group mb-4">
+<ul class="list-group mb-4" id="current-roles">
     {% for role, player_request in assignments.items() %}
         <li class="list-group-item d-flex justify-content-between align-items-center" id="role_{{ role }}">
             {{ role | replace('_', ' ') }}: {{ '[{}]{}'.format(player_request.alliance, player_request.player) if player_request else 'None' }}
             <div>
                 {% if player_request %}
-                <span id="time_{{ role }}" class="badge badge-primary badge-pill">05:00</span>
+                <span id="time_{{ role }}" class="badge badge-primary badge-pill">{{ remaining_times[role] if player_request else '' }}</span>
                 <a href="#" onclick="releaseRole('{{ role }}')" class="btn btn-danger btn-sm ml-2">Release</a>
                 {% else %}
                 <a href="#" onclick="assignRole('{{ role }}')" class="btn btn-success btn-sm">Assign</a>
@@ -46,8 +49,9 @@
         </li>
     {% endfor %}
 </ul>
+
 <h2 class="mb-3">Waiting Queue</h2>
-<ul class="list-group">
+<ul class="list-group" id="waiting-queue">
     {% for role, queue in roles.items() %}
         <li class="list-group-item">
             <strong>{{ role | replace('_', ' ') }}:</strong>
@@ -59,54 +63,36 @@
         </li>
     {% endfor %}
 </ul>
+
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        {% for role, player_request in assignments.items() %}
-            {% if player_request %}
-                updateTimer("{{ role }}");
-            {% endif %}
-        {% endfor %}
+    function updateTimer(role, remainingTime) {
+        var display = document.getElementById('time_' + role);
+        var timer = remainingTime;
+        var minutes, seconds;
 
-        $('#roleRequestForm').on('submit', function(event) {
-            event.preventDefault();
-            var formData = $(this).serialize();
-            $.post('/request_role', formData, function(response) {
-                if (response.status === 'success') {
-                    alert('Role requested successfully!');
-                    location.reload();
-                } else {
-                    alert('Error requesting role.');
-                }
-            });
-        });
-    });
+        var interval = setInterval(function () {
+            minutes = parseInt(timer / 60, 10);
+            seconds = parseInt(timer % 60, 10);
 
-    function updateTimer(role) {
-        $.get('/get_remaining_time/' + role, function(data) {
-            var display = document.getElementById('time_' + role);
-            var timer = data.remaining_time;
-            var minutes, seconds;
+            minutes = minutes < 10 ? "0" + minutes : minutes;
+            seconds = seconds < 10 ? "0" + seconds : seconds;
 
-            var interval = setInterval(function () {
-                minutes = parseInt(timer / 60, 10);
-                seconds = parseInt(timer % 60, 10);
+            display.textContent = minutes + ":" + seconds;
 
-                minutes = minutes < 10 ? "0" + minutes : minutes;
-                seconds = seconds < 10 ? "0" + seconds : seconds;
-
-                display.textContent = minutes + ":" + seconds;
-
-                if (--timer < 0) {
-                    clearInterval(interval);
-                    releaseRole(role);
-                }
-            }, 1000);
-        });
+            if (--timer < 0) {
+                clearInterval(interval);
+                releaseRole(role);
+            }
+        }, 1000);
     }
 
     function releaseRole(role) {
         $.get('/release_role/' + role, function(data) {
-            location.reload();
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                alert(data.message);
+            }
         });
     }
 
@@ -121,11 +107,31 @@
                         <a href="#" onclick="releaseRole('${role}')" class="btn btn-danger btn-sm ml-2">Release</a>
                     </div>
                 `;
-                updateTimer(role);
+                updateTimer(role, 300);  // Start the countdown from 300 seconds (5 minutes)
             } else {
                 alert(data.message);
             }
         });
     }
+
+    $(document).ready(function() {
+        $('#request-role-form').on('submit', function(e) {
+            e.preventDefault();
+
+            $.post('/request_role', $(this).serialize(), function(data) {
+                if (data.status === 'success') {
+                    location.reload();
+                } else {
+                    alert('Error submitting the role request.');
+                }
+            });
+        });
+
+        {% for role, player_request in assignments.items() %}
+            {% if player_request %}
+                updateTimer("{{ role }}", {{ remaining_times[role] if player_request else 0 }});
+            {% endif %}
+        {% endfor %}
+    });
 </script>
 {% endblock %}

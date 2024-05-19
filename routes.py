@@ -6,7 +6,7 @@ import sqlalchemy as sa
 import logging
 from role_manager import RoleManager
 
-# Configure logging
+# Configura il logging
 logging.basicConfig(level=logging.DEBUG)
 
 role_manager = RoleManager()
@@ -22,10 +22,6 @@ def init_routes(app):
             role: role_manager.get_remaining_time(role) if role_manager.is_role_assigned(role) else ''
             for role in role_manager.roles.keys()
         }
-
-        roles_with_requests = {role: [db.session.merge(req) for req in requests] for role, requests in roles_with_requests.items()}
-        current_assignments = {role: db.session.merge(req) if req else None for role, req in current_assignments.items()}
-
         return render_template('index.html', roles=roles_with_requests, assignments=current_assignments, start_times=start_times, remaining_times=remaining_times)
 
     @app.route('/request_role', methods=['POST'])
@@ -77,10 +73,6 @@ def init_routes(app):
             role: role_manager.get_remaining_time(role) if role_manager.is_role_assigned(role) else ''
             for role in role_manager.roles.keys()
         }
-
-        roles_with_requests = {role: [db.session.merge(req) for req in requests] for role, requests in roles_with_requests.items()}
-        current_assignments = {role: db.session.merge(req) if req else None for role, req in current_assignments.items()}
-
         return jsonify({'roles': roles_with_requests, 'assignments': current_assignments, 'start_times': remaining_times})
 
     @app.route('/dashboard')
