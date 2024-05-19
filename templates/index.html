@@ -8,7 +8,7 @@
 
 {% block content %}
 <h1 class="mb-4">Role Manager</h1>
-<form action="/request_role" method="POST" class="mb-4">
+<form id="roleRequestForm" class="mb-4">
     <div class="form-group">
         <label for="player">Player Name:</label>
         <input type="text" class="form-control" id="player" name="player" required>
@@ -66,6 +66,19 @@
                 updateTimer("{{ role }}");
             {% endif %}
         {% endfor %}
+
+        $('#roleRequestForm').on('submit', function(event) {
+            event.preventDefault();
+            var formData = $(this).serialize();
+            $.post('/request_role', formData, function(response) {
+                if (response.status === 'success') {
+                    alert('Role requested successfully!');
+                    location.reload();
+                } else {
+                    alert('Error requesting role.');
+                }
+            });
+        });
     });
 
     function updateTimer(role) {
