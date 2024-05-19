@@ -48,6 +48,59 @@
             </div>
         </li>
     {% endfor %}
+Let's complete the `index.html` file:
+
+```html
+{% extends "base.html" %}
+
+{% block title %}Home - Role Manager{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Role Manager</h1>
+<form id="request-role-form" class="mb-4">
+    <div class="form-group">
+        <label for="player">Player Name:</label>
+        <input type="text" class="form-control" id="player" name="player" required>
+        <div id="player-error" class="error-message" style="display: none;">Player name must be in the format [alliance]playername.</div>
+    </div>
+    <div class="form-group">
+        <label for="role">Requested Role:</label>
+        <select class="form-control" id="role" name="role" required>
+            <option value="secretary_of_strategy">Secretary of Strategy</option>
+            <option value="secretary_of_security">Secretary of Security</option>
+            <option value="secretary_of_development">Secretary of Development</option>
+            <option value="secretary_of_science">Secretary of Science</option>
+            <option value="secretary_of_interior">Secretary of Interior</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="coordinates">Coordinates (optional):</label>
+        <input type="text" class="form-control" id="coordinates" name="coordinates">
+    </div>
+    <button type="submit" class="btn btn-primary">Request Role</button>
+</form>
+
+<h2 class="mb-3">Current Roles</h2>
+<ul class="list-group mb-4" id="current-roles">
+    {% for role, player_request in assignments.items() %}
+        <li class="list-group-item d-flex justify-content-between align-items-center" id="role_{{ role }}">
+            {{ role | replace('_', ' ') }}: {{ '[{}]{}'.format(player_request.alliance, player_request.player) if player_request else 'None' }}
+            <div>
+                {% if player_request %}
+                <span id="time_{{ role }}" class="badge badge-primary badge-pill">{{ remaining_times[role] if player_request else '' }}</span>
+                <a href="#" onclick="releaseRole('{{ role }}')" class="btn btn-danger btn-sm ml-2">Release</a>
+                {% else %}
+                <a href="#" onclick="assignRole('{{ role }}')" class="btn btn-success btn-sm">Assign</a>
+                {% endif %}
+            </div>
+        </li>
+    {% endfor %}
 </ul>
 
 <h2 class="mb-3">Waiting Queue</h2>
