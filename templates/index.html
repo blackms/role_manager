@@ -102,7 +102,7 @@
             if (data.status === 'success') {
                 var roleElement = document.getElementById('role_' + role);
                 roleElement.innerHTML = `
-                    ${data.role}: [${data.player}]
+                    ${data.role}: ${data.player}
                     <div>
                         <span id="time_${role}" class="badge badge-primary badge-pill">05:00</span>
                         <a href="#" onclick="releaseRole('${role}')" class="btn btn-danger btn-sm ml-2">Release</a>
