@@ -35,89 +35,51 @@
 
 <h2 class="mb-3">Current Roles</h2>
 <ul class="list-group mb-4" id="current-roles">
-    {% for role, player_request in assignments.items() %}
-        <li class="list-group-item d-flex justify-content-between align-items-center" id="role_{{ role }}">
-            {{ role | replace('_', ' ') }}: {{ '[{}]{}'.format(player_request.alliance, player_request.player) if player_request else 'None' }}
-            <div>
-                {% if player_request %}
-                <span id="time_{{ role }}" class="badge badge-primary badge-pill">{{ remaining_times[role] if player_request else '' }}</span>
-                <a href="#" onclick="releaseRole('{{ role }}')" class="btn btn-danger btn-sm ml-2">Release</a>
-                {% else %}
-                <a href="#" onclick="assignRole('{{ role }}')" class="btn btn-success btn-sm">Assign</a>
-                {% endif %}
-            </div>
-        </li>
-    {% endfor %}
-Let's complete the `index.html` file:
-
-```html
-{% extends "base.html" %}
-
-{% block title %}Home - Role Manager{% endblock %}
-
-{% block extra_scripts %}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-{% endblock %}
-
-{% block content %}
-<h1 class="mb-4">Role Manager</h1>
-<form id="request-role-form" class="mb-4">
-    <div class="form-group">
-        <label for="player">Player Name:</label>
-        <input type="text" class="form-control" id="player" name="player" required>
-        <div id="player-error" class="error-message" style="display: none;">Player name must be in the format [alliance]playername.</div>
-    </div>
-    <div class="form-group">
-        <label for="role">Requested Role:</label>
-        <select class="form-control" id="role" name="role" required>
-            <option value="secretary_of_strategy">Secretary of Strategy</option>
-            <option value="secretary_of_security">Secretary of Security</option>
-            <option value="secretary_of_development">Secretary of Development</option>
-            <option value="secretary_of_science">Secretary of Science</option>
-            <option value="secretary_of_interior">Secretary of Interior</option>
-        </select>
-    </div>
-    <div class="form-group">
-        <label for="coordinates">Coordinates (optional):</label>
-        <input type="text" class="form-control" id="coordinates" name="coordinates">
-    </div>
-    <button type="submit" class="btn btn-primary">Request Role</button>
-</form>
-
-<h2 class="mb-3">Current Roles</h2>
-<ul class="list-group mb-4" id="current-roles">
-    {% for role, player_request in assignments.items() %}
-        <li class="list-group-item d-flex justify-content-between align-items-center" id="role_{{ role }}">
-            {{ role | replace('_', ' ') }}: {{ '[{}]{}'.format(player_request.alliance, player_request.player) if player_request else 'None' }}
-            <div>
-                {% if player_request %}
-                <span id="time_{{ role }}" class="badge badge-primary badge-pill">{{ remaining_times[role] if player_request else '' }}</span>
-                <a href="#" onclick="releaseRole('{{ role }}')" class="btn btn-danger btn-sm ml-2">Release</a>
-                {% else %}
-                <a href="#" onclick="assignRole('{{ role }}')" class="btn btn-success btn-sm">Assign</a>
-                {% endif %}
-            </div>
-        </li>
-    {% endfor %}
+    <!-- Will be populated by jQuery -->
 </ul>
 
 <h2 class="mb-3">Waiting Queue</h2>
 <ul class="list-group" id="waiting-queue">
-    {% for role, queue in roles.items() %}
-        <li class="list-group-item">
-            <strong>{{ role | replace('_', ' ') }}:</strong>
-            <ul class="list-group mt-2">
-                {% for request in queue %}
-                    <li class="list-group-item">{{ '[{}]{}'.format(request.alliance, request.player) }}{% if request.coordinates %} ({{ request.coordinates }}){% endif %}</li>
-                {% endfor %}
-            </ul>
-        </li>
-    {% endfor %}
+    <!-- Will be populated by jQuery -->
 </ul>
 
 <script>
+    function fetchRoles() {
+        $.ajax({
+            url: '/api/roles',
+            method: 'GET',
+            success: function(data) {
+                var currentRoles = $('#current-roles');
+                var waitingQueue = $('#waiting-queue');
+                currentRoles.empty();
+                waitingQueue.empty();
+
+                // Populate current roles
+                data.assignments.forEach(function(assignment) {
+                    var listItem = $('<li class="list-group-item d-flex justify-content-between align-items-center"></li>');
+                    var roleText = `${assignment.role.replace('_', ' ')}: ${assignment.player ? '[' + assignment.alliance + ']' + assignment.player : 'None'}`;
+                    var badge = assignment.remaining_time ? `<span id="time_${assignment.role}" class="badge badge-primary badge-pill">${assignment.remaining_time}</span>` : '';
+                    var releaseButton = assignment.player ? `<a href="#" onclick="releaseRole('${assignment.role}')" class="btn btn-danger btn-sm ml-2">Release</a>` : `<a href="#" onclick="assignRole('${assignment.role}')" class="btn btn-success btn-sm">Assign</a>`;
+                    listItem.html(`${roleText}<div>${badge}${releaseButton}</div>`);
+                    currentRoles.append(listItem);
+                });
+
+                // Populate waiting queue
+                data.roles.forEach(function(role) {
+                    var listItem = $('<li class="list-group-item"></li>');
+                    var queueItems = role.requests.map(function(request) {
+                        return `<li class="list-group-item">[${request.alliance}]${request.player}${request.coordinates ? ' (' + request.coordinates + ')' : ''}</li>`;
+                    }).join('');
+                    listItem.html(`<strong>${role.role.replace('_', ' ')}:</strong><ul class="list-group mt-2">${queueItems}</ul>`);
+                    waitingQueue.append(listItem);
+                });
+            },
+            error: function() {
+                alert('Failed to fetch role data.');
+            }
+        });
+    }
+
     function updateTimer(role, remainingTime) {
         var display = document.getElementById('time_' + role);
         var timer = remainingTime;
@@ -142,7 +104,7 @@ Let's complete the `index.html` file:
     function releaseRole(role) {
         $.get('/release_role/' + role, function(data) {
             if (data.status === 'success') {
-                location.reload();
+                fetchRoles();
             } else {
                 alert('Failed to release role.');
             }
@@ -168,11 +130,13 @@ Let's complete the `index.html` file:
     }
 
     $(document).ready(function() {
+        fetchRoles();
+
         $('#request-role-form').submit(function(event) {
             event.preventDefault();
             $.post('/request_role', $(this).serialize(), function(data) {
                 if (data.status === 'success') {
-                    location.reload();
+                    fetchRoles();
                 } else {
                     alert('Failed to request role.');
                 }

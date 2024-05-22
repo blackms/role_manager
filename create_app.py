@@ -8,7 +8,6 @@ from routes import init_routes
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
-    Session(app)
     db.init_app(app)
 
     migrate = Migrate(app, db)
