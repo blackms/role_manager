@@ -80,13 +80,14 @@
                 // Populate waiting queue
                 data.roles.forEach(function(role) {
                     var listItem = $('<li class="list-group-item"></li>');
+                    var totalWaitingTime = role.requests.length * 5 * 1.1; // Calculate total waiting time
                     var queueItems = role.requests.map(function(request, index) {
                         if (index === 0) {
                             return `<li class="list-group-item d-flex justify-content-between align-items-center">[${request.alliance}]${request.player}${request.coordinates ? ' (' + request.coordinates + ')' : ''} <button onclick="assignRole('${role.role}')" class="btn btn-success btn-sm">Assign</button></li>`;
                         }
                         return `<li class="list-group-item">[${request.alliance}]${request.player}${request.coordinates ? ' (' + request.coordinates + ')' : ''}</li>`;
                     }).join('');
-                    listItem.html(`<strong>${role.role.replace('_', ' ')}:</strong><ul class="list-group mt-2">${queueItems}</ul>`);
+                    listItem.html(`<strong>${role.role.replace('_', ' ')}: Total Waiting Time: ${totalWaitingTime.toFixed(1)} minutes</strong><ul class="list-group mt-2">${queueItems}</ul>`);
                     waitingQueue.append(listItem);
                 });
             },
