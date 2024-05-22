@@ -2,6 +2,67 @@
 
 {% block title %}Dashboard{% endblock %}
 
+{% block extra_styles %}
+<style>
+    body {
+        background-color: #2c3e50;
+        color: #ecf0f1;
+    }
+
+    .card {
+        background-color: #34495e;
+        border: none;
+        border-radius: 10px;
+        color: #ecf0f1;
+    }
+
+    .card-title {
+        color: #ecf0f1;
+    }
+
+    .list-group-item {
+        background-color: #2c3e50;
+        border: none;
+        color: #ecf0f1;
+    }
+
+    .list-group-item:hover {
+        background-color: #3b4b5a;
+    }
+
+    .chart-container {
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #34495e;
+        border-radius: 10px;
+    }
+
+    h2 {
+        color: #ecf0f1;
+    }
+
+    .chartjs-render-monitor {
+        background-color: #34495e !important;
+        border-radius: 10px;
+    }
+
+    .chart-legend {
+        color: #ecf0f1 !important;
+    }
+
+    .chart-tooltip {
+        color: #2c3e50 !important;
+        background-color: #ecf0f1 !important;
+        border-radius: 5px;
+    }
+
+    canvas {
+        background-color: #34495e;
+        border-radius: 10px;
+    }
+</style>
+{% endblock %}
+
 {% block extra_scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -15,6 +76,7 @@
                 if (data.length > 0) {
                     data.forEach(role => {
                         const listItem = document.createElement('li');
+                        listItem.className = 'list-group-item';
                         listItem.textContent = `${role.role} (${role.count} requests)`;
                         mostRequestedRoleElement.appendChild(listItem);
                     });
@@ -32,6 +94,7 @@
                 if (data.length > 0) {
                     data.forEach(player => {
                         const listItem = document.createElement('li');
+                        listItem.className = 'list-group-item';
                         listItem.textContent = `${player.player} (${player.count} requests)`;
                         topRequesterElement.appendChild(listItem);
                     });
@@ -51,15 +114,30 @@
                         datasets: [{
                             label: 'Requests',
                             data: data.map(item => item.count),
-                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                            borderColor: 'rgba(75, 192, 192, 1)',
+                            backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                            borderColor: 'rgba(52, 152, 219, 1)',
                             borderWidth: 1
                         }]
                     },
                     options: {
                         scales: {
                             y: {
-                                beginAtZero: true
+                                beginAtZero: true,
+                                ticks: {
+                                    color: '#ecf0f1'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    color: '#ecf0f1'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: '#ecf0f1'
+                                }
                             }
                         }
                     }
@@ -85,7 +163,22 @@
                     options: {
                         scales: {
                             y: {
-                                beginAtZero: true
+                                beginAtZero: true,
+                                ticks: {
+                                    color: '#ecf0f1'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    color: '#ecf0f1'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: '#ecf0f1'
+                                }
                             }
                         }
                     }
@@ -126,7 +219,9 @@
                         responsive: true,
                         plugins: {
                             legend: {
-                                position: 'top',
+                                labels: {
+                                    color: '#ecf0f1'
+                                }
                             },
                             tooltip: {
                                 callbacks: {
