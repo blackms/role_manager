@@ -3,6 +3,7 @@ from models import db, RoleRequest
 import sqlalchemy as sa
 import logging
 from datetime import datetime
+from flask import Blueprint, render_template
 
 dashboard_routes = Blueprint('dashboard', __name__)
 
