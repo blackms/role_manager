@@ -45,7 +45,8 @@ def request_role():
         coordinates = None
 
     alliance, player = player_name.split(']')
-    alliance = alliance[1:]
+    alliance = alliance[1:].lower()
+    player = player.lower()
     new_request = RoleRequest(
         alliance=alliance,
         player=player,
