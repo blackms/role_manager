@@ -44,6 +44,8 @@
 </ul>
 
 <script>
+    let timers = {}; // Store timers for each role
+
     function fetchRoles() {
         $.ajax({
             url: '/api/roles',
@@ -55,6 +57,12 @@
                 var waitingQueue = $('#waiting-queue');
                 currentRoles.empty();
                 waitingQueue.empty();
+
+                // Clear existing timers
+                for (let role in timers) {
+                    clearInterval(timers[role]);
+                }
+                timers = {};
 
                 // Populate current roles
                 data.assignments.forEach(function(assignment) {
@@ -90,9 +98,9 @@
 
     function startCountdown(role, remainingTime) {
         var display = document.getElementById('time_' + role);
-        var timer = Math.floor(remainingTime) * 60;  // Convert minutes to seconds
+        var timer = Math.floor(remainingTime * 60);  // Convert minutes to seconds
 
-        var interval = setInterval(function() {
+        timers[role] = setInterval(function() {
             var minutes = parseInt(timer / 60, 10);
             var seconds = parseInt(timer % 60, 10);
 
@@ -102,7 +110,7 @@
             display.textContent = minutes + ":" + seconds;
 
             if (--timer < 0) {
-                clearInterval(interval);
+                clearInterval(timers[role]);
                 releaseRole(role);
             }
         }, 1000);
