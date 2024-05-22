@@ -60,10 +60,13 @@
                 data.assignments.forEach(function(assignment) {
                     var listItem = $('<li class="list-group-item d-flex justify-content-between align-items-center"></li>');
                     var roleText = `${assignment.role.replace('_', ' ')}: ${assignment.player}`;
-                    var badge = assignment.remaining_time ? `<span id="time_${assignment.role}" class="badge badge-primary badge-pill">${assignment.remaining_time}</span>` : '';
+                    var badge = assignment.remaining_time ? `<span id="time_${assignment.role}" class="badge badge-primary badge-pill">${Math.floor(assignment.remaining_time)}:00</span>` : '';
                     var releaseButton = `<a href="#" onclick="releaseRole('${assignment.role}')" class="btn btn-danger btn-sm ml-2">Release</a>`;
                     listItem.html(`${roleText}<div>${badge}${releaseButton}</div>`);
                     currentRoles.append(listItem);
+                    if (assignment.remaining_time) {
+                        startCountdown(assignment.role, assignment.remaining_time);
+                    }
                 });
 
                 // Populate waiting queue
@@ -85,14 +88,13 @@
         });
     }
 
-    function updateTimer(role, remainingTime) {
+    function startCountdown(role, remainingTime) {
         var display = document.getElementById('time_' + role);
-        var timer = remainingTime;
-        var minutes, seconds;
+        var timer = Math.floor(remainingTime) * 60;  // Convert minutes to seconds
 
         var interval = setInterval(function() {
-            minutes = parseInt(timer / 60, 10);
-            seconds = parseInt(timer % 60, 10);
+            var minutes = parseInt(timer / 60, 10);
+            var seconds = parseInt(timer % 60, 10);
 
             minutes = minutes < 10 ? "0" + minutes : minutes;
             seconds = seconds < 10 ? "0" + seconds : seconds;

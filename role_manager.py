@@ -1,5 +1,6 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
+from models import db, RoleRequest
 
 class RoleManager:
     def __init__(self):
@@ -12,6 +13,7 @@ class RoleManager:
         }
         self.current_assignments = {}
         self.start_times = {}
+        self.assignment_duration = 5  # Duration in minutes
 
     def add_request(self, role, request):
         self.roles[role].append(request)
@@ -30,10 +32,11 @@ class RoleManager:
             del self.start_times[role]
 
     def get_remaining_time(self, role):
-        if role in self.start_times:
-            elapsed_time = datetime.utcnow() - self.start_times[role]
-            remaining_time = max(0, 300 - int(elapsed_time.total_seconds()))
-            return remaining_time
+        assignment = db.session.query(RoleRequest).filter_by(role=role, status='assigned').first()
+        if assignment:
+            time_elapsed = datetime.utcnow() - assignment.assign_time
+            remaining_time = self.assignment_duration - (time_elapsed.total_seconds() / 60)
+            return max(0, remaining_time)  # Ensure non-negative remaining time
         return 0
 
     def get_roles_with_requests(self):

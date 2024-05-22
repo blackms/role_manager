@@ -75,7 +75,7 @@ def assign_role(role):
 def release_role(role):
     player_request = db.session.query(RoleRequest).filter_by(role=role, status='assigned').first()
     if player_request:
-        player_request.status = 'waiting'
+        player_request.status = 'finished'
         player_request.assign_time = None
         db.session.commit()
         return jsonify({'status': 'success'})
