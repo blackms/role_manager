@@ -100,6 +100,10 @@
         var display = document.getElementById('time_' + role);
         var timer = Math.floor(remainingTime * 60);  // Convert minutes to seconds
 
+        if (remainingTime === 5) {  // Initialize to full duration if remaining_time is 5 minutes
+            timer = 5 * 60;
+        }
+
         timers[role] = setInterval(function() {
             var minutes = parseInt(timer / 60, 10);
             var seconds = parseInt(timer % 60, 10);
