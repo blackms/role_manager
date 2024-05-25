@@ -4,113 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Role Manager{% endblock %}</title>
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #343a40;
-            color: #ffffff;
-        }
-        .navbar {
-            background-color: #212529;
-        }
-        .list-group-item {
-            background-color: #495057;
-            color: #ffffff;
-        }
-        .card {
-            background-color: #495057;
-            color: #ffffff;
-        }
-        .card-title {
-            color: #f8f9fa;
-        }
-        .btn-primary, .btn-success, .btn-danger {
-            color: #ffffff;
-        }
-        .form-control, .form-control:focus {
-            background-color: #495057;
-            color: #ffffff;
-            border: 1px solid #ced4da;
-        }
-        .invalid {
-            background-color: #dc3545;
-            color: #ffffff;
-        }
-        .error-message {
-            color: #dc3545;
-            font-weight: bold;
-        }
-    </style>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    {% block extra_scripts %}
-    {% endblock %}
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    {% block extra_styles %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <a class="navbar-brand" href="/">Role Manager</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav">
-                <li class="nav-item {% if request.endpoint == 'index' %}active{% endif %}">
+                <li class="nav-item">
                     <a class="nav-link" href="/">Home</a>
                 </li>
-                <li class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                <li class="nav-item">
                     <a class="nav-link" href="/dashboard">Dashboard</a>
                 </li>
-                <li class="nav-item {% if request.endpoint == 'about' %}active{% endif %}">
-                    <a class="nav-link" href="/about">About</a>
-                </li>
-                <li class="nav-item {% if request.endpoint == 'contact' %}active{% endif %}">
-                    <a class="nav-link" href="/contact">Contact</a>
+                <li class="nav-item">
+                    <a class="nav-link" href="/daily_stats">Daily Stats</a>
                 </li>
             </ul>
         </div>
     </nav>
-    <div class="container mt-5">
-        {% block content %}
-        {% endblock %}
+    <div class="container mt-4">
+        {% block content %}{% endblock %}
     </div>
-    <script>
-        function validatePlayerName() {
-            var playerNameField = document.getElementById('player');
-            var playerName = playerNameField.value;
-            var allianceTagPattern = /^\[.+\].+$/;
-            var errorMessage = document.getElementById('player-error');
-
-            if (!allianceTagPattern.test(playerName)) {
-                playerNameField.classList.add('invalid');
-                errorMessage.style.display = 'block';
-                return false;
-            } else {
-                playerNameField.classList.remove('invalid');
-                errorMessage.style.display = 'none';
-                return true;
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            var requestRoleButton = document.getElementById('request-role-button');
-            var playerNameField = document.getElementById('player');
-
-            if (requestRoleButton) {
-                requestRoleButton.addEventListener('click', function(event) {
-                    if (!validatePlayerName()) {
-                        event.preventDefault();
-                    }
-                });
-            }
-
-            if (playerNameField) {
-                playerNameField.addEventListener('input', function() {
-                    playerNameField.classList.remove('invalid');
-                    document.getElementById('player-error').style.display = 'none';
-                });
-            }
-        });
-    </script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    {% block extra_scripts %}{% endblock %}
 </body>
 </html>
