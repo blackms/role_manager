@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Daily Stats{% endblock %}
+
+{% block extra_styles %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/material-dashboard/2.1.0/css/material-dashboard.min.css" rel="stylesheet">
+<style>
+    .card-stats .card-header {
+        margin-top: -20px;
+    }
+    .card-category {
+        color: #999;
+        font-size: 14px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-3 col-md-6 col-sm-6">
+        <div class="card card-stats">
+            <div class="card-header card-header-primary">
+                <h4 class="card-title">Number of Requests</h4>
+                <p class="card-category">Today's total</p>
+            </div>
+            <div class="card-body">
+                <h3 id="num-requests">0</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 col-sm-6">
+        <div class="card card-stats">
+            <div class="card-header card-header-info">
+                <h4 class="card-title">Top Players</h4>
+                <p class="card-category">Top 10</p>
+            </div>
+            <div class="card-body">
+                <ul id="top-players" class="list-group"></ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 col-sm-6">
+        <div class="card card-stats">
+            <div class="card-header card-header-success">
+                <h4 class="card-title">Top Alliances</h4>
+                <p class="card-category">Top 5</p>
+            </div>
+            <div class="card-body">
+                <ul id="top-alliances" class="list-group"></ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 col-sm-6">
+        <div class="card card-stats">
+            <div class="card-header card-header-warning">
+                <h4 class="card-title">Average Waiting Time</h4>
+                <p class="card-category">Minutes</p>
+            </div>
+            <div class="card-body">
+                <h3 id="avg-wait-time">0</h3>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/material-dashboard/2.1.0/js/material-dashboard.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        fetch('/api/daily_stats')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('num-requests').textContent = data.num_requests;
+
+                const topPlayersList = document.getElementById('top-players');
+                data.top_players.forEach(player => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'list-group-item';
+                    listItem.textContent = `${player.player}: ${player.count}`;
+                    topPlayersList.appendChild(listItem);
+                });
+
+                const topAlliancesList = document.getElementById('top-alliances');
+                data.top_alliances.forEach(alliance => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'list-group-item';
+                    listItem.textContent = `${alliance.alliance}: ${alliance.count}`;
+                    topAlliancesList.appendChild(listItem);
+                });
+
+                document.getElementById('avg-wait-time').textContent = data.avg_wait_time.toFixed(2);
+            });
+    });
+</script>
+{% endblock %}
