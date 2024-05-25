@@ -3,7 +3,8 @@
 {% block title %}Daily Stats{% endblock %}
 
 {% block extra_styles %}
-<link href="https://cdnjs.cloudflare.com/ajax/libs/material-dashboard/2.1.0/css/material-dashboard.min.css" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/material-dashboard.css') }}">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 <style>
     .card-stats .card-header {
         margin-top: -20px;
@@ -20,6 +21,7 @@
     <div class="col-lg-3 col-md-6 col-sm-6">
         <div class="card card-stats">
             <div class="card-header card-header-primary">
+                <div class="icon"><i class="material-icons">assignment</i></div>
                 <h4 class="card-title">Number of Requests</h4>
                 <p class="card-category">Today's total</p>
             </div>
@@ -31,6 +33,7 @@
     <div class="col-lg-3 col-md-6 col-sm-6">
         <div class="card card-stats">
             <div class="card-header card-header-info">
+                <div class="icon"><i class="material-icons">person</i></div>
                 <h4 class="card-title">Top Players</h4>
                 <p class="card-category">Top 10</p>
             </div>
@@ -42,6 +45,7 @@
     <div class="col-lg-3 col-md-6 col-sm-6">
         <div class="card card-stats">
             <div class="card-header card-header-success">
+                <div class="icon"><i class="material-icons">group</i></div>
                 <h4 class="card-title">Top Alliances</h4>
                 <p class="card-category">Top 5</p>
             </div>
@@ -53,6 +57,7 @@
     <div class="col-lg-3 col-md-6 col-sm-6">
         <div class="card card-stats">
             <div class="card-header card-header-warning">
+                <div class="icon"><i class="material-icons">timer</i></div>
                 <h4 class="card-title">Average Waiting Time</h4>
                 <p class="card-category">Minutes</p>
             </div>
@@ -65,7 +70,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/material-dashboard/2.1.0/js/material-dashboard.min.js"></script>
+<script src="{{ url_for('static', filename='js/material-dashboard.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         fetch('/api/daily_stats')
