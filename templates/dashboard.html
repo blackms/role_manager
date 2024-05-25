@@ -3,107 +3,179 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block extra_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/material-dashboard.css') }}">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 <style>
-    body {
-        background-color: #2c3e50;
-        color: #ecf0f1;
+    .card-stats .card-header {
+        margin-top: -20px;
     }
-
-    .card {
-        background-color: #34495e;
-        border: none;
-        border-radius: 10px;
-        color: #ecf0f1;
-    }
-
-    .card-title {
-        color: #ecf0f1;
-    }
-
-    .list-group-item {
-        background-color: #2c3e50;
-        border: none;
-        color: #ecf0f1;
-    }
-
-    .list-group-item:hover {
-        background-color: #3b4b5a;
-    }
-
-    .chart-container {
-        margin: 20px auto;
-        padding: 20px;
-        background-color: #34495e;
-        border-radius: 10px;
-    }
-
-    h2 {
-        color: #ecf0f1;
-    }
-
-    .chartjs-render-monitor {
-        background-color: #34495e !important;
-        border-radius: 10px;
-    }
-
-    .chart-legend {
-        color: #ecf0f1 !important;
-    }
-
-    .chart-tooltip {
-        color: #2c3e50 !important;
-        background-color: #ecf0f1 !important;
-        border-radius: 5px;
-    }
-
-    canvas {
-        background-color: #34495e;
-        border-radius: 10px;
+    .card-category {
+        color: #999;
+        font-size: 14px;
     }
 </style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mt-5 mb-4">Dashboard</h1>
+    <div class="row">
+        <div class="col-lg-3 col-md-6 col-sm-6">
+            <div class="card card-stats">
+                <div class="card-header card-header-primary">
+                    <div class="icon"><i class="material-icons">assignment</i></div>
+                    <h4 class="card-title">Number of Requests</h4>
+                    <p class="card-category">Today's total</p>
+                </div>
+                <div class="card-body">
+                    <h3 id="num-requests">0</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-6">
+            <div class="card card-stats">
+                <div class="card-header card-header-info">
+                    <div class="icon"><i class="material-icons">person</i></div>
+                    <h4 class="card-title">Top Players</h4>
+                    <p class="card-category">Top 10</p>
+                </div>
+                <div class="card-body">
+                    <ul id="top-players" class="list-group"></ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-6">
+            <div class="card card-stats">
+                <div class="card-header card-header-success">
+                    <div class="icon"><i class="material-icons">group</i></div>
+                    <h4 class="card-title">Top Alliances</h4>
+                    <p class="card-category">Top 5</p>
+                </div>
+                <div class="card-body">
+                    <ul id="top-alliances" class="list-group"></ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-6">
+            <div class="card card-stats">
+                <div class="card-header card-header-warning">
+                    <div class="icon"><i class="material-icons">timer</i></div>
+                    <h4 class="card-title">Average Waiting Time</h4>
+                    <p class="card-category">Minutes</p>
+                </div>
+                <div class="card-body">
+                    <h3 id="avg-wait-time">0</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Role Distribution</h5>
+                    <canvas id="role-distribution-chart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Requests per Day</h5>
+                    <canvas id="requests-per-day-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Alliance Distribution</h5>
+                    <canvas id="alliance-distribution-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        fetch('/api/dashboard/most_requested_role')
+        fetch('/api/dashboard/num_requests')
             .then(response => response.json())
             .then(data => {
-                const mostRequestedRoleElement = document.getElementById('most-requested-role');
-                mostRequestedRoleElement.innerHTML = ''; // Clear previous content
-
-                if (data.length > 0) {
-                    data.forEach(role => {
-                        const listItem = document.createElement('li');
-                        listItem.className = 'list-group-item';
-                        listItem.textContent = `${role.role} (${role.count} requests)`;
-                        mostRequestedRoleElement.appendChild(listItem);
-                    });
-                } else {
-                    mostRequestedRoleElement.innerText = 'No data';
-                }
+                document.getElementById('num-requests').textContent = data.num_requests;
             });
 
         fetch('/api/dashboard/top_requester')
             .then(response => response.json())
             .then(data => {
-                const topRequesterElement = document.getElementById('top-requester');
-                topRequesterElement.innerHTML = ''; // Clear previous content
-
-                if (data.length > 0) {
-                    data.forEach(player => {
-                        const listItem = document.createElement('li');
-                        listItem.className = 'list-group-item';
-                        listItem.textContent = `${player.player} (${player.count} requests)`;
-                        topRequesterElement.appendChild(listItem);
-                    });
-                } else {
-                    topRequesterElement.innerText = 'No data';
-                }
+                const topPlayersList = document.getElementById('top-players');
+                data.forEach(player => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'list-group-item';
+                    listItem.textContent = `${player.player}: ${player.count}`;
+                    topPlayersList.appendChild(listItem);
+                });
             });
 
-        fetch('/api/dashboard/role_distribution')
+        fetch('/api/dashboard/alliance_distribution')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('alliance-distribution-chart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.map(item => item.alliance),
+                        datasets: [{
+                            label: 'Requests',
+                            data: data.map(item => item.count),
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.2)',
+                                'rgba(54, 162, 235, 0.2)',
+                                'rgba(255, 206, 86, 0.2)',
+                                'rgba(75, 192, 192, 0.2)',
+                                'rgba(153, 102, 255, 0.2)',
+                                'rgba(255, 159, 64, 0.2)'
+                            ],
+                            borderColor: [
+                                'rgba(255, 99, 132, 1)',
+                                'rgba(54, 162, 235, 1)',
+                                'rgba(255, 206, 86, 1)',
+                                'rgba(75, 192, 192, 1)',
+                                'rgba(153, 102, 255, 1)',
+                                'rgba(255, 159, 64, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        label += context.raw;
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+
+        fetch('/api/dashboard/most_requested_role')
             .then(response => response.json())
             .then(data => {
                 const ctx = document.getElementById('role-distribution-chart').getContext('2d');
@@ -114,30 +186,15 @@
                         datasets: [{
                             label: 'Requests',
                             data: data.map(item => item.count),
-                            backgroundColor: 'rgba(52, 152, 219, 0.2)',
-                            borderColor: 'rgba(52, 152, 219, 1)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
                             borderWidth: 1
                         }]
                     },
                     options: {
                         scales: {
                             y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    color: '#ecf0f1'
-                                }
-                            },
-                            x: {
-                                ticks: {
-                                    color: '#ecf0f1'
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                labels: {
-                                    color: '#ecf0f1'
-                                }
+                                beginAtZero: true
                             }
                         }
                     }
@@ -163,133 +220,18 @@
                     options: {
                         scales: {
                             y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    color: '#ecf0f1'
-                                }
-                            },
-                            x: {
-                                ticks: {
-                                    color: '#ecf0f1'
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                labels: {
-                                    color: '#ecf0f1'
-                                }
+                                beginAtZero: true
                             }
                         }
                     }
                 });
             });
 
-        fetch('/api/dashboard/alliance_distribution')
+        fetch('/api/dashboard/avg_wait_time')
             .then(response => response.json())
             .then(data => {
-                const ctx = document.getElementById('alliance-distribution-chart').getContext('2d');
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: data.map(item => item.alliance),
-                        datasets: [{
-                            label: 'Requests',
-                            data: data.map(item => item.count),
-                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        indexAxis: 'y', // Make it a horizontal bar chart
-                        scales: {
-                            x: {
-                                beginAtZero: true,
-                                ticks: {
-                                    color: '#ecf0f1'
-                                }
-                            },
-                            y: {
-                                ticks: {
-                                    color: '#ecf0f1'
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                labels: {
-                                    color: '#ecf0f1'
-                                }
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        let label = context.label || '';
-                                        if (label) {
-                                            label += ': ';
-                                        }
-                                        label += context.raw;
-                                        return label;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
+                document.getElementById('avg-wait-time').textContent = data.avg_wait_time.toFixed(2);
             });
     });
 </script>
-{% endblock %}
-
-{% block content %}
-<div class="container">
-    <h1 class="mt-5 mb-4">Dashboard</h1>
-    <div class="row">
-        <div class="col-lg-6 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Most Requested Roles</h5>
-                    <ul id="most-requested-role" class="list-group">Loading...</ul>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-6 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Top Requesters</h5>
-                    <ul id="top-requester" class="list-group">Loading...</ul>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-6 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Role Distribution</h5>
-                    <canvas id="role-distribution-chart"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-6 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Requests per Day</h5>
-                    <canvas id="requests-per-day-chart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-12 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Alliance Distribution</h5>
-                    <canvas id="alliance-distribution-chart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}

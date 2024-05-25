@@ -9,6 +9,55 @@ dashboard_routes = Blueprint('dashboard', __name__)
 def dashboard():
     return render_template('dashboard.html')
 
+@dashboard_routes.route('/api/dashboard/most_requested_role')
+def most_requested_role():
+    results = db.session.query(
+        RoleRequest.role,
+        func.count(RoleRequest.id).label('count')
+    ).group_by(RoleRequest.role).all()
+    data = [{'role': role, 'count': count} for role, count in results]
+    return jsonify(data)
+
+@dashboard_routes.route('/api/dashboard/top_requester')
+def top_requester():
+    results = db.session.query(
+        RoleRequest.player,
+        func.count(RoleRequest.id).label('count')
+    ).group_by(RoleRequest.player).order_by(func.count(RoleRequest.id).desc()).limit(10).all()
+    data = [{'player': player, 'count': count} for player, count in results]
+    return jsonify(data)
+
+@dashboard_routes.route('/api/dashboard/requests_per_day')
+def requests_per_day():
+    results = db.session.query(
+        func.date(RoleRequest.request_time).label('day'),
+        func.count(RoleRequest.id).label('count')
+    ).group_by(func.date(RoleRequest.request_time)).all()
+    data = [{'day': str(day), 'count': count} for day, count in results]
+    return jsonify(data)
+
+@dashboard_routes.route('/api/dashboard/alliance_distribution')
+def alliance_distribution():
+    results = db.session.query(
+        RoleRequest.alliance,
+        func.count(RoleRequest.id).label('count')
+    ).group_by(RoleRequest.alliance).all()
+    data = [{'alliance': alliance, 'count': count} for alliance, count in results]
+    return jsonify(data)
+
+@dashboard_routes.route('/api/dashboard/num_requests')
+def num_requests():
+    count = db.session.query(func.count(RoleRequest.id)).scalar()
+    return jsonify({'num_requests': count})
+
+@dashboard_routes.route('/api/dashboard/avg_wait_time')
+def avg_wait_time():
+    avg_wait = db.session.query(
+        func.avg(func.julianday(RoleRequest.assign_time) - func.julianday(RoleRequest.request_time))
+    ).scalar()
+    avg_wait_minutes = avg_wait * 24 * 60 if avg_wait is not None else 0
+    return jsonify({'avg_wait_time': avg_wait_minutes})
+
 @dashboard_routes.route('/daily_stats')
 def daily_stats():
     return render_template('daily_stats.html')
