@@ -1,9 +1,7 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, render_template, jsonify
 from models import db, RoleRequest
-import sqlalchemy as sa
-import logging
-from datetime import datetime
-from flask import Blueprint, render_template
+from sqlalchemy import func
+from datetime import datetime, timedelta
 
 dashboard_routes = Blueprint('dashboard', __name__)
 
@@ -11,69 +9,49 @@ dashboard_routes = Blueprint('dashboard', __name__)
 def dashboard():
     return render_template('dashboard.html')
 
-@dashboard_routes.route('/api/dashboard/most_requested_role', methods=['GET'])
-def most_requested_role():
-    results = db.session.query(
-        RoleRequest.role,
-        sa.func.count(RoleRequest.id).label('count')
-    ).group_by(RoleRequest.role).order_by(sa.desc('count')).all()
+@dashboard_routes.route('/daily_stats')
+def daily_stats():
+    return render_template('daily_stats.html')
 
-    logging.debug(f"Most requested roles: {results}")
+@dashboard_routes.route('/api/daily_stats', methods=['GET'])
+def get_daily_stats():
+    today = datetime.utcnow().date()
+    tomorrow = today + timedelta(days=1)
 
-    result_list = [{'role': result.role, 'count': result.count} for result in results]
+    num_requests = db.session.query(func.count(RoleRequest.id)).filter(
+        RoleRequest.request_time >= today,
+        RoleRequest.request_time < tomorrow
+    ).scalar()
 
-    return jsonify(result_list)
+    top_players = db.session.query(
+        RoleRequest.player, func.count(RoleRequest.id).label('request_count')
+    ).filter(
+        RoleRequest.request_time >= today,
+        RoleRequest.request_time < tomorrow
+    ).group_by(RoleRequest.player).order_by(func.count(RoleRequest.id).desc()).limit(10).all()
 
-@dashboard_routes.route('/api/dashboard/top_requester', methods=['GET'])
-def top_requester():
-    results = db.session.query(
-        RoleRequest.player,
-        sa.func.count(RoleRequest.id).label('count')
-    ).group_by(RoleRequest.player).order_by(sa.desc('count')).limit(10).all()
+    top_alliances = db.session.query(
+        RoleRequest.alliance, func.count(RoleRequest.id).label('request_count')
+    ).filter(
+        RoleRequest.request_time >= today,
+        RoleRequest.request_time < tomorrow
+    ).group_by(RoleRequest.alliance).order_by(func.count(RoleRequest.id).desc()).limit(5).all()
 
-    logging.debug(f"Top requesters: {results}")
+    avg_wait_time = db.session.query(
+        func.avg(func.julianday(RoleRequest.assign_time) - func.julianday(RoleRequest.request_time))
+    ).filter(
+        RoleRequest.request_time >= today,
+        RoleRequest.request_time < tomorrow,
+        RoleRequest.assign_time != None
+    ).scalar()
 
-    result_list = [{'player': result.player, 'count': result.count} for result in results]
+    avg_wait_time = avg_wait_time * 24 * 60 if avg_wait_time else 0  # Convert days to minutes
 
-    return jsonify(result_list)
+    stats = {
+        'num_requests': num_requests,
+        'top_players': [{'player': player, 'count': count} for player, count in top_players],
+        'top_alliances': [{'alliance': alliance, 'count': count} for alliance, count in top_alliances],
+        'avg_wait_time': avg_wait_time
+    }
 
-@dashboard_routes.route('/api/dashboard/role_distribution', methods=['GET'])
-def role_distribution():
-    results = db.session.query(
-        RoleRequest.role,
-        sa.func.count(RoleRequest.id).label('count')
-    ).group_by(RoleRequest.role).all()
-
-    logging.debug(f"Role distribution: {results}")
-
-    result_list = [{'role': result.role, 'count': result.count} for result in results]
-
-    return jsonify(result_list)
-
-@dashboard_routes.route('/api/dashboard/requests_per_day', methods=['GET'])
-def requests_per_day():
-    results = db.session.query(
-        sa.func.strftime('%Y-%m-%d', RoleRequest.request_time).label('day'),
-        sa.func.count(RoleRequest.id).label('count')
-    ).group_by(
-        sa.func.strftime('%Y-%m-%d', RoleRequest.request_time)
-    ).all()
-
-    logging.debug(f"Requests per day: {results}")
-
-    result_list = [{'day': datetime.strptime(result.day, '%Y-%m-%d').isoformat(), 'count': result.count} for result in results]
-
-    return jsonify(result_list)
-
-@dashboard_routes.route('/api/dashboard/alliance_distribution', methods=['GET'])
-def alliance_distribution():
-    results = db.session.query(
-        RoleRequest.alliance,
-        sa.func.count(RoleRequest.id).label('count')
-    ).group_by(RoleRequest.alliance).all()
-
-    logging.debug(f"Alliance distribution: {results}")
-
-    result_list = [{'alliance': result.alliance, 'count': result.count} for result in results]
-
-    return jsonify(result_list)
+    return jsonify(stats)
