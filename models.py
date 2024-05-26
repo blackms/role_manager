@@ -1,14 +1,16 @@
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import Column, Integer, String, DateTime, Enum
 
 db = SQLAlchemy()
 
 class RoleRequest(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    alliance = db.Column(db.String(50), nullable=False)
-    player = db.Column(db.String(50), nullable=False)
-    role = db.Column(db.String(50), nullable=False)
-    coordinates = db.Column(db.String(100))
-    request_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    assign_time = db.Column(db.DateTime)
-    status = db.Column(db.String(10), nullable=False, default='waiting')
+    __tablename__ = 'role_requests'
+    id = Column(Integer, primary_key=True)
+    alliance = Column(String(50), nullable=False)
+    player = Column(String(50), nullable=False)
+    role = Column(String(50), nullable=False)
+    coordinates = Column(String(50), nullable=True)
+    request_time = Column(DateTime, default=datetime.utcnow)
+    assign_time = Column(DateTime, nullable=True)
+    status = Column(Enum('waiting', 'assigned', 'finished', name='status'), default='waiting')

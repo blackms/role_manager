@@ -1,128 +1,176 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
 {% block title %}Home - Role Manager{% endblock %}
+
+{% block extra_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/material-dashboard.css') }}">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+<style>
+    .form-control, .form-group label {
+        color: #495057;
+    }
+    .error-message {
+        color: red;
+    }
+    .card {
+        margin-bottom: 20px;
+    }
+    .card-header-primary {
+        background: linear-gradient(60deg, #66bb6a, #43a047);  /* Green */
+    }
+    .card-header-info {
+        background: linear-gradient(60deg, #26c6da, #00acc1);  /* Cyan */
+    }
+    .card-header-warning {
+        background: linear-gradient(60deg, #ffa726, #fb8c00);  /* Orange */
+    }
+    .card-header-danger {
+        background: linear-gradient(60deg, #ef5350, #e53935);  /* Red */
+    }
+    .card-header-custom {
+        background: linear-gradient(60deg, #42a5f5, #1e88e5);  /* Blue */
+    }
+    .form-control {
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        padding: 0.75rem 1.25rem;
+    }
+    .form-control:focus {
+        border-color: #66bb6a;
+        box-shadow: 0 0 0 0.2rem rgba(102, 187, 106, 0.25);
+    }
+    .list-group-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .list-group-item strong {
+        font-weight: 500;
+    }
+    .btn-block {
+        background-color: #66bb6a;
+        color: #fff;
+        font-weight: 500;
+    }
+    .btn-block:hover {
+        background-color: #43a047;
+    }
+    .badge-pill {
+        padding: 0.5em 1em;
+        border-radius: 1em;
+        background-color: #26c6da;
+    }
+    .card-title {
+        display: flex;
+        align-items: center;
+    }
+    .card-title i {
+        margin-right: 10px;
+    }
+    .role-list {
+        list-style-type: none;
+        padding: 0;
+    }
+    .role-list li {
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    .role-list li:hover {
+        background-color: #f0f0f0;
+    }
+    .role-list input[type="radio"] {
+        display: none;
+    }
+    .role-list label {
+        width: 100%;
+        display: block;
+        cursor: pointer;
+    }
+    .role-list input[type="radio"]:checked + label {
+        background-color: #66bb6a;
+        color: #fff;
+        border-color: #66bb6a;
+    }
+</style>
+{% endblock %}
 
 {% block extra_scripts %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-{% endblock %}
-
-{% block content %}
-<h1 class="mb-4">Role Manager</h1>
-<form id="request-role-form" class="mb-4">
-    <div class="form-group">
-        <label for="player">Player Name:</label>
-        <input type="text" class="form-control" id="player" name="player" required>
-        <div id="player-error" class="error-message" style="display: none;">Player name must be in the format [alliance]playername.</div>
-    </div>
-    <div class="form-group">
-        <label for="role">Requested Role:</label>
-        <select class="form-control" id="role" name="role" required>
-            <option value="secretary_of_strategy">Secretary of Strategy</option>
-            <option value="secretary_of_security">Secretary of Security</option>
-            <option value="secretary_of_development">Secretary of Development</option>
-            <option value="secretary_of_science">Secretary of Science</option>
-            <option value="secretary_of_interior">Secretary of Interior</option>
-        </select>
-    </div>
-    <div class="form-group">
-        <label for="coordinates">Coordinates (optional):</label>
-        <input type="text" class="form-control" id="coordinates" name="coordinates">
-    </div>
-    <button type="submit" class="btn btn-primary">Request Role</button>
-</form>
-
-<h2 class="mb-3">Current Roles</h2>
-<ul class="list-group mb-4" id="current-roles">
-    <!-- Will be populated by jQuery -->
-</ul>
-
-<h2 class="mb-3">Waiting Queue</h2>
-<ul class="list-group" id="waiting-queue">
-    <!-- Will be populated by jQuery -->
-</ul>
-
 <script>
-    let timers = {}; // Store timers for each role
-
     function fetchRoles() {
-        $.ajax({
-            url: '/api/roles',
-            method: 'GET',
-            success: function(data) {
-                console.log(data);  // Log the data to the console for debugging
-
-                var currentRoles = $('#current-roles');
-                var waitingQueue = $('#waiting-queue');
-                currentRoles.empty();
-                waitingQueue.empty();
-
-                // Clear existing timers
-                for (let role in timers) {
-                    clearInterval(timers[role]);
-                }
-                timers = {};
-
-                // Populate current roles
+        $.get('/api/roles', function(data) {
+            console.log("Fetched roles data:", data); // Log the data to check the structure
+    
+            const currentRoles = $('#current-roles');
+            currentRoles.empty();
+    
+            const waitingQueue = $('#waiting-queue');
+            waitingQueue.empty();
+    
+            // Populate current roles
+            if (data.assignments) {
                 data.assignments.forEach(function(assignment) {
-                    var listItem = $('<li class="list-group-item d-flex justify-content-between align-items-center"></li>');
-                    var roleText = `${assignment.role.replace('_', ' ')}: ${assignment.player}`;
-                    var badge = assignment.remaining_time ? `<span id="time_${assignment.role}" class="badge badge-primary badge-pill">${Math.floor(assignment.remaining_time)}:00</span>` : '';
-                    var releaseButton = `<a href="#" onclick="releaseRole('${assignment.role}')" class="btn btn-danger btn-sm ml-2">Release</a>`;
-                    listItem.html(`${roleText}<div>${badge}${releaseButton}</div>`);
+                    const listItem = $('<li class="list-group-item"></li>');
+                    const roleText = `<span><i class="material-icons">person</i> ${assignment.role.replace('_', ' ')}: ${assignment.player}</span>`;
+                    const badge = assignment.remaining_time ? `<span id="time_${assignment.role}" class="badge badge-pill">${assignment.remaining_time}</span>` : '';
+                    const releaseButton = `<a href="#" onclick="releaseRole('${assignment.role}')" class="btn btn-danger btn-sm">Release</a>`;
+                    listItem.html(`${roleText} <div>${badge} ${releaseButton}</div>`);
                     currentRoles.append(listItem);
-                    if (assignment.remaining_time) {
-                        startCountdown(assignment.role, assignment.remaining_time);
+                    startCountdown(assignment.role, assignment.remaining_time);
+                });
+            }
+    
+            // Populate waiting queue
+            if (data.roles) {
+                data.roles.forEach(function(role) {
+                    if (role && role.requests) {
+                        const roleItem = $(`<li class="list-group-item"><strong>${role.role.replace('_', ' ')}:</strong> Total Waiting Time: ${role.requests.length * 5 * 1.1} minutes</li>`);
+                        const queueList = $('<ul class="list-group mt-2"></ul>');
+                        role.requests.forEach(function(request, index) {
+                            const queueItem = $('<li class="list-group-item"></li>');
+                            const requestText = `<span><i class="material-icons">person</i> ${request.player}${request.coordinates ? ' (' + request.coordinates + ')' : ''}</span>`;
+                            const assignButton = index === 0 ? `<a href="#" onclick="assignRole('${role.role}')" class="btn btn-success btn-sm">Assign</a>` : '';
+                            queueItem.html(`${requestText} ${assignButton}`);
+                            queueList.append(queueItem);
+                        });
+                        roleItem.append(queueList);
+                        waitingQueue.append(roleItem);
                     }
                 });
-
-                // Populate waiting queue
-                data.roles.forEach(function(role) {
-                    var listItem = $('<li class="list-group-item"></li>');
-                    var totalWaitingTime = role.requests.length * 5 * 1.1; // Calculate total waiting time
-                    var queueItems = role.requests.map(function(request, index) {
-                        if (index === 0) {
-                            return `<li class="list-group-item d-flex justify-content-between align-items-center">[${request.alliance}]${request.player}${request.coordinates ? ' (' + request.coordinates + ')' : ''} <button onclick="assignRole('${role.role}')" class="btn btn-success btn-sm">Assign</button></li>`;
-                        }
-                        return `<li class="list-group-item">[${request.alliance}]${request.player}${request.coordinates ? ' (' + request.coordinates + ')' : ''}</li>`;
-                    }).join('');
-                    listItem.html(`<strong>${role.role.replace('_', ' ')}: Total Waiting Time: ${totalWaitingTime.toFixed(1)} minutes</strong><ul class="list-group mt-2">${queueItems}</ul>`);
-                    waitingQueue.append(listItem);
-                });
-            },
-            error: function() {
-                alert('Failed to fetch role data.');
             }
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+            console.error("Failed to fetch roles:", textStatus, errorThrown);
         });
-    }
+    }    
 
     function startCountdown(role, remainingTime) {
         var display = document.getElementById('time_' + role);
-        var timer = Math.floor(remainingTime * 60);  // Convert minutes to seconds
-
-        if (remainingTime === 5) {  // Initialize to full duration if remaining_time is 5 minutes
-            timer = 5 * 60;
-        }
-
-        timers[role] = setInterval(function() {
+        var timer = remainingTime * 60;  // Convert minutes to seconds
+    
+        var interval = setInterval(function() {
             var minutes = parseInt(timer / 60, 10);
             var seconds = parseInt(timer % 60, 10);
-
+    
             minutes = minutes < 10 ? "0" + minutes : minutes;
             seconds = seconds < 10 ? "0" + seconds : seconds;
-
+    
             display.textContent = minutes + ":" + seconds;
-
+    
             if (--timer < 0) {
-                clearInterval(timers[role]);
+                clearInterval(interval);
                 releaseRole(role);
             }
         }, 1000);
-    }
+    }    
 
     function releaseRole(role) {
-        $.get('/release_role/' + role, function(data) {
+        $.get('/api/release_role/' + role, function(data) {
             if (data.status === 'success') {
                 fetchRoles();
             } else {
@@ -132,11 +180,11 @@
     }
 
     function assignRole(role) {
-        $.get('/assign_role/' + role, function(data) {
+        $.get('/api/assign_role/' + role, function(data) {
             if (data.status === 'success') {
                 fetchRoles();
             } else {
-                alert('No player available for this role.');
+                alert('Failed to assign role.');
             }
         });
     }
@@ -146,7 +194,7 @@
 
         $('#request-role-form').submit(function(event) {
             event.preventDefault();
-            $.post('/request_role', $(this).serialize(), function(data) {
+            $.post('/api/request_role', $(this).serialize(), function(data) {
                 if (data.status === 'success') {
                     fetchRoles();
                 } else {
@@ -156,4 +204,80 @@
         });
     });
 </script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Role Manager</h1>
+    <div class="row">
+        <div class="col-lg-6 col-md-8 col-sm-10 mx-auto">
+            <div class="card">
+                <div class="card-header card-header-primary">
+                    <h4 class="card-title"><i class="material-icons">assignment</i>Request a Role</h4>
+                </div>
+                <div class="card-body">
+                    <form id="request-role-form">
+                        <div class="form-group">
+                            <label for="player">Player Name:</label>
+                            <input type="text" class="form-control" id="player" name="player" required>
+                            <div id="player-error" class="error-message" style="display: none;">Player name must be in the format [alliance]playername.</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="role">Requested Role:</label>
+                            <ul class="role-list">
+                                <li>
+                                    <input type="radio" id="role_strategy" name="role" value="secretary_of_strategy" required>
+                                    <label for="role_strategy">Secretary of Strategy</label>
+                                </li>
+                                <li>
+                                    <input type="radio" id="role_security" name="role" value="secretary_of_security" required>
+                                    <label for="role_security">Secretary of Security</label>
+                                </li>
+                                <li>
+                                    <input type="radio" id="role_development" name="role" value="secretary_of_development" required>
+                                    <label for="role_development">Secretary of Development</label>
+                                </li>
+                                <li>
+                                    <input type="radio" id="role_science" name="role" value="secretary_of_science" required>
+                                    <label for="role_science">Secretary of Science</label>
+                                </li>
+                                <li>
+                                    <input type="radio" id="role_interior" name="role" value="secretary_of_interior" required>
+                                    <label for="role_interior">Secretary of Interior</label>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="form-group">
+                            <label for="coordinates">Coordinates (optional):</label>
+                            <input type="text" class="form-control" id="coordinates" name="coordinates">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Request Role</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mt-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header card-header-info">
+                    <h4 class="card-title"><i class="material-icons">group</i>Current Roles</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group" id="current-roles"></ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header card-header-warning">
+                    <h4 class="card-title"><i class="material-icons">hourglass_empty</i>Waiting Queue</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group" id="waiting-queue"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

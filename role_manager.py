@@ -32,11 +32,16 @@ class RoleManager:
             del self.start_times[role]
 
     def get_remaining_time(self, role):
-        assignment = db.session.query(RoleRequest).filter_by(role=role, status='assigned').first()
-        if assignment:
-            time_elapsed = datetime.utcnow() - assignment.assign_time
-            remaining_time = self.assignment_duration - (time_elapsed.total_seconds() / 60)
-            return max(0, remaining_time)  # Ensure non-negative remaining time
+        role_request = RoleRequest.query.filter_by(role=role, status='assigned').first()
+        if role_request:
+            assign_duration = timedelta(minutes=5)  # 5 minutes for the role assignment
+            time_elapsed = datetime.utcnow() - role_request.assign_time
+            remaining_time = assign_duration - time_elapsed
+            if remaining_time.total_seconds() > 0:
+                return remaining_time.total_seconds() / 60  # return in minutes
+            else:
+                self.release_role(role)
+                return 0
         return 0
 
     def get_roles_with_requests(self):

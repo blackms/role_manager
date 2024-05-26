@@ -7,36 +7,32 @@ role_routes = Blueprint('roles', __name__)
 
 @role_routes.route('/api/roles', methods=['GET'])
 def get_roles():
-    waiting_requests = db.session.query(RoleRequest).filter_by(status='waiting').all()
-    current_assignments = db.session.query(RoleRequest).filter_by(status='assigned').all()
+    roles_with_requests = {}
+    current_assignments = {}
 
-    roles_data = {
-        'assignments': [
-            {
-                'role': assignment.role,
-                'player': f"[{assignment.alliance}]{assignment.player}",
-                'remaining_time': role_manager.get_remaining_time(assignment.role)  # Ensure this function exists
-            }
-            for assignment in current_assignments
-        ],
-        'roles': [
-            {
-                'role': role,
-                'requests': [
-                    {
-                        'alliance': request.alliance,
-                        'player': request.player,
-                        'coordinates': request.coordinates
-                    }
-                    for request in waiting_requests if request.role == role
-                ]
-            }
-            for role in set(req.role for req in waiting_requests)
-        ]
-    }
-    return jsonify(roles_data)
+    roles = RoleRequest.query.filter_by(status='waiting').all()
+    assignments = RoleRequest.query.filter_by(status='assigned').all()
 
-@role_routes.route('/request_role', methods=['POST'])
+    for role in roles:
+        if role.role not in roles_with_requests:
+            roles_with_requests[role.role] = []
+        roles_with_requests[role.role].append({
+            'player': role.player,
+            'coordinates': role.coordinates
+        })
+
+    for assignment in assignments:
+        current_assignments[assignment.role] = {
+            'player': assignment.player,
+            'remaining_time': 5  # assuming a fixed time for demonstration
+        }
+
+    return jsonify({
+        'roles': [{'role': role, 'requests': requests} for role, requests in roles_with_requests.items()],
+        'assignments': [{'role': role, 'player': assignment['player'], 'remaining_time': assignment['remaining_time']} for role, assignment in current_assignments.items()]
+    })
+
+@role_routes.route('/api/request_role', methods=['POST'])
 def request_role():
     player_name = request.form['player']
     role = request.form['role']
@@ -63,21 +59,21 @@ def request_role():
 
 @role_routes.route('/assign_role/<role>')
 def assign_role(role):
-    player_request = db.session.query(RoleRequest).filter_by(role=role, status='waiting').first()
+    player_request = role_manager.assign_role(role)
     if player_request:
         player_request.status = 'assigned'
         player_request.assign_time = datetime.utcnow()
         db.session.commit()
         remaining_time = role_manager.get_remaining_time(role)
-        return jsonify({'status': 'success', 'player': f'[{player_request.alliance}]{player_request.player}', 'remaining_time': remaining_time})
+        return jsonify({
+            'status': 'success',
+            'player': f'[{player_request.alliance}]{player_request.player}',
+            'remaining_time': remaining_time
+        })
     return jsonify({'status': 'failure'})
 
 @role_routes.route('/release_role/<role>')
 def release_role(role):
-    player_request = db.session.query(RoleRequest).filter_by(role=role, status='assigned').first()
-    if player_request:
-        player_request.status = 'finished'
-        player_request.assign_time = None
-        db.session.commit()
-        return jsonify({'status': 'success'})
-    return jsonify({'status': 'failure'})
+    role_manager.release_role(role)
+    db.session.commit()
+    return jsonify({'status': 'success'})
