@@ -1,0 +1,44 @@
+<div class="card">
+    <div class="card-header card-header-primary">
+        <h4 class="card-title"><i class="material-icons">assignment</i> Request a Role</h4>
+    </div>
+    <div class="card-body">
+        <form id="request-role-form">
+            <div class="form-group">
+                <label for="player">Player Name:</label>
+                <input type="text" class="form-control" id="player" name="player" required>
+                <div id="player-error" class="error-message" style="display: none;">Player name must be in the format [alliance]playername.</div>
+            </div>
+            <div class="form-group">
+                <label for="role">Requested Role:</label>
+                <ul class="role-list">
+                    <li>
+                        <input type="radio" id="role_strategy" name="role" value="secretary_of_strategy" required>
+                        <label for="role_strategy">Secretary of Strategy</label>
+                    </li>
+                    <li>
+                        <input type="radio" id="role_security" name="role" value="secretary_of_security" required>
+                        <label for="role_security">Secretary of Security</label>
+                    </li>
+                    <li>
+                        <input type="radio" id="role_development" name="role" value="secretary_of_development" required>
+                        <label for="role_development">Secretary of Development</label>
+                    </li>
+                    <li>
+                        <input type="radio" id="role_science" name="role" value="secretary_of_science" required>
+                        <label for="role_science">Secretary of Science</label>
+                    </li>
+                    <li>
+                        <input type="radio" id="role_interior" name="role" value="secretary_of_interior" required>
+                        <label for="role_interior">Secretary of Interior</label>
+                    </li>
+                </ul>
+            </div>
+            <div class="form-group">
+                <label for="coordinates">Coordinates (optional):</label>
+                <input type="text" class="form-control" id="coordinates" name="coordinates">
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Request Role</button>
+        </form>
+    </div>
+</div>

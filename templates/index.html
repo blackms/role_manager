@@ -99,9 +99,6 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script>
     function fetchRoles() {
         $.get('/api/roles', function(data) {
@@ -211,72 +208,15 @@
     <h1 class="mb-4">Role Manager</h1>
     <div class="row">
         <div class="col-lg-6 col-md-8 col-sm-10 mx-auto">
-            <div class="card">
-                <div class="card-header card-header-primary">
-                    <h4 class="card-title"><i class="material-icons">assignment</i>Request a Role</h4>
-                </div>
-                <div class="card-body">
-                    <form id="request-role-form">
-                        <div class="form-group">
-                            <label for="player">Player Name:</label>
-                            <input type="text" class="form-control" id="player" name="player" required>
-                            <div id="player-error" class="error-message" style="display: none;">Player name must be in the format [alliance]playername.</div>
-                        </div>
-                        <div class="form-group">
-                            <label for="role">Requested Role:</label>
-                            <ul class="role-list">
-                                <li>
-                                    <input type="radio" id="role_strategy" name="role" value="secretary_of_strategy" required>
-                                    <label for="role_strategy">Secretary of Strategy</label>
-                                </li>
-                                <li>
-                                    <input type="radio" id="role_security" name="role" value="secretary_of_security" required>
-                                    <label for="role_security">Secretary of Security</label>
-                                </li>
-                                <li>
-                                    <input type="radio" id="role_development" name="role" value="secretary_of_development" required>
-                                    <label for="role_development">Secretary of Development</label>
-                                </li>
-                                <li>
-                                    <input type="radio" id="role_science" name="role" value="secretary_of_science" required>
-                                    <label for="role_science">Secretary of Science</label>
-                                </li>
-                                <li>
-                                    <input type="radio" id="role_interior" name="role" value="secretary_of_interior" required>
-                                    <label for="role_interior">Secretary of Interior</label>
-                                </li>
-                            </ul>
-                        </div>
-                        <div class="form-group">
-                            <label for="coordinates">Coordinates (optional):</label>
-                            <input type="text" class="form-control" id="coordinates" name="coordinates">
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-block">Request Role</button>
-                    </form>
-                </div>
-            </div>
+            {% include '_role_request_form.html' %}
         </div>
     </div>
     <div class="row mt-4">
         <div class="col-lg-6">
-            <div class="card">
-                <div class="card-header card-header-info">
-                    <h4 class="card-title"><i class="material-icons">group</i>Current Roles</h4>
-                </div>
-                <div class="card-body">
-                    <ul class="list-group" id="current-roles"></ul>
-                </div>
-            </div>
+            {% include '_current_roles.html' %}
         </div>
         <div class="col-lg-6">
-            <div class="card">
-                <div class="card-header card-header-warning">
-                    <h4 class="card-title"><i class="material-icons">hourglass_empty</i>Waiting Queue</h4>
-                </div>
-                <div class="card-body">
-                    <ul class="list-group" id="waiting-queue"></ul>
-                </div>
-            </div>
+            {% include '_waiting_queue.html' %}
         </div>
     </div>
 </div>

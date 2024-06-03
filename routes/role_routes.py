@@ -3,6 +3,9 @@ from flask import Blueprint, jsonify, request
 from models import db, RoleRequest
 from role_manager import role_manager
 from datetime import datetime, timedelta
+from flask_login import login_required
+from flask import Flask, Blueprint, render_template, request, redirect, url_for, flash, session
+from werkzeug.security import check_password_hash
 
 role_routes = Blueprint('roles', __name__)
 
@@ -92,6 +95,7 @@ def request_role():
 
 
 @role_routes.route('/api/assign_role/<role>', methods=['GET'])
+@login_required
 def assign_role(role):
     logger.info(f"Attempting to assign role: {role}")
     player_request = RoleRequest.query.filter_by(
@@ -115,9 +119,11 @@ def assign_role(role):
 
 
 @role_routes.route('/api/release_role/<role>', methods=['GET'])
+@login_required
 def release_role(role):
     logger.info(f"Attempting to release role: {role}")
-    role_request = RoleRequest.query.filter_by(role=role, status='assigned').first()
+    role_request = RoleRequest.query.filter_by(
+        role=role, status='assigned').first()
     if role_request:
         role_request.status = 'finished'
         db.session.commit()
